@@ -123,12 +123,20 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
                           alt={item.name}
                           className={`w-full h-full object-cover ${item.quantity === 0 ? "grayscale" : ""}`}
                           onError={(e) => {
-                            console.error("[v0] Image failed to load for:", item.name, {
-                              hasImageUrl: !!item.imageUrl,
-                              imageUrlLength: item.imageUrl?.length || 0,
-                              imageUrlPrefix: item.imageUrl?.substring(0, 100),
-                              isBase64: item.imageUrl?.startsWith("data:image/"),
-                            })
+                            try {
+                              const safeImageUrl = item.imageUrl || ""
+                              const safePrefix =
+                                safeImageUrl.length > 50 ? safeImageUrl.slice(0, 50) + "..." : safeImageUrl
+
+                              console.error("[v0] Image failed to load for:", item.name, {
+                                hasImageUrl: !!item.imageUrl,
+                                imageUrlLength: safeImageUrl.length,
+                                imageUrlPrefix: safePrefix,
+                                isBase64: safeImageUrl.startsWith("data:image/"),
+                              })
+                            } catch (stringError) {
+                              console.error("[v0] Image failed to load for:", item.name, "- string processing error")
+                            }
                             // Fallback to placeholder on error
                             e.currentTarget.style.display = "none"
                             e.currentTarget.nextElementSibling?.classList.remove("hidden")
@@ -281,9 +289,15 @@ function EditItemForm({ item, onSave }: { item: Item | null; onSave: (updates: P
     if (file) {
       const reader = new FileReader()
       reader.onload = (event) => {
-        const result = event.target?.result as string
-        setImagePreview(result)
-        setFormData((prev) => ({ ...prev, imageUrl: result }))
+        try {
+          const result = event.target?.result as string
+          if (result && typeof result === "string") {
+            setImagePreview(result)
+            setFormData((prev) => ({ ...prev, imageUrl: result }))
+          }
+        } catch (error) {
+          console.error("[v0] Error processing uploaded image:", error)
+        }
       }
       reader.readAsDataURL(file)
     }

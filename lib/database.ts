@@ -124,6 +124,7 @@ export interface Item {
   rarity: string
   quantity: number
   image_url?: string
+  nation_image_url?: string // Added nation_image_url field to Item interface
   created_at: string
   updated_at: string
 }
@@ -173,6 +174,7 @@ export async function getItems(): Promise<Item[]> {
         rarity,
         quantity,
         COALESCE(image_url, '') as image_url,
+        COALESCE(nation_image_url, '') as nation_image_url,
         created_at,
         updated_at
       FROM items 
@@ -214,10 +216,14 @@ export async function createItem(item: Omit<Item, "id" | "created_at" | "updated
   }
 
   try {
-    console.log("[v0] Creating item with data:", { name: item.name, hasImageUrl: !!item.image_url })
+    console.log("[v0] Creating item with data:", {
+      name: item.name,
+      hasImageUrl: !!item.image_url,
+      hasNationImageUrl: !!item.nation_image_url,
+    })
     const [dbItem] = await sql`
-      INSERT INTO items (name, description, category, rarity, quantity, image_url)
-      VALUES (${item.name}, ${item.description}, ${item.category}, ${item.rarity}, ${item.quantity}, ${item.image_url})
+      INSERT INTO items (name, description, category, rarity, quantity, image_url, nation_image_url)
+      VALUES (${item.name}, ${item.description}, ${item.category}, ${item.rarity}, ${item.quantity}, ${item.image_url}, ${item.nation_image_url})
       RETURNING *
     `
     console.log("[v0] Successfully created item in database:", dbItem.name, "with id:", dbItem.id)
@@ -271,6 +277,7 @@ export async function updateItem(
         rarity = COALESCE(${updates.rarity}, rarity),
         quantity = COALESCE(${updates.quantity}, quantity),
         image_url = COALESCE(${updates.image_url}, image_url),
+        nation_image_url = COALESCE(${updates.nation_image_url}, nation_image_url),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
@@ -342,7 +349,8 @@ export async function getTradeRequests(): Promise<TradeRequest[]> {
           'category', i.category,
           'rarity', i.rarity,
           'quantity', i.quantity,
-          'image_url', i.image_url
+          'image_url', i.image_url,
+          'nation_image_url', i.nation_image_url
         ) as item
       FROM trade_requests tr
       JOIN items i ON tr.item_id = i.id
@@ -442,7 +450,8 @@ export async function updateTradeRequestStatus(id: number, status: "accepted" | 
           'category', items.category,
           'rarity', items.rarity,
           'quantity', items.quantity,
-          'image_url', items.image_url
+          'image_url', items.image_url,
+          'nation_image_url', items.nation_image_url
         ) as item
     `
     return updatedRequest as TradeRequest

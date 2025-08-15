@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, ShoppingCart, Eye, Star } from "lucide-react"
+import { Search, ShoppingCart, Star } from "lucide-react"
 import type { Item, TradeRequest } from "@/app/page"
 
 interface PublicTradingInterfaceProps {
@@ -74,7 +74,9 @@ export function PublicTradingInterface({ items, onTradeRequest }: PublicTradingI
             <ShoppingCart className="w-5 h-5" />
             Public Marketplace ({publicItems.length} total items, {filteredItems.length} available)
           </CardTitle>
-          <CardDescription>Browse available items and make trade requests</CardDescription>
+          <CardDescription>
+            Browse available items and make trade requests. Click on any item to open the trade request menu.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -115,68 +117,68 @@ export function PublicTradingInterface({ items, onTradeRequest }: PublicTradingI
 
           <div className="minecraft-inventory-grid grid grid-cols-9 gap-4">
             {paginatedItems.map((item) => (
-              <div
-                key={item.id}
-                className="minecraft-slot group cursor-pointer hover:scale-105 transition-transform relative"
-              >
-                <div className={`minecraft-item-icon bg-gradient-to-br ${getRarityColor(item.rarity)}`}>
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl || "/placeholder.svg"}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
-                      <span className="text-xs font-bold text-stone-700">{item.name.charAt(0).toUpperCase()}</span>
+              <Dialog key={item.id}>
+                <DialogTrigger asChild>
+                  <div
+                    className="minecraft-slot group cursor-pointer hover:scale-105 transition-transform relative"
+                    onClick={() => setSelectedItem(item)}
+                  >
+                    <div className={`minecraft-item-icon bg-gradient-to-br ${getRarityColor(item.rarity)}`}>
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl || "/placeholder.svg"}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
+                          <span className="text-xs font-bold text-stone-700">{item.name.charAt(0).toUpperCase()}</span>
+                        </div>
+                      )}
+                      {item.quantity > 1 && (
+                        <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm border border-stone-600">
+                          {item.quantity}
+                        </div>
+                      )}
+                      {item.rarity === "legendary" && (
+                        <Star className="absolute -top-1 -right-1 w-3 h-3 text-yellow-300 fill-current" />
+                      )}
                     </div>
-                  )}
-                  {item.quantity > 1 && (
-                    <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm border border-stone-600">
-                      {item.quantity}
-                    </div>
-                  )}
-                  {item.rarity === "legendary" && (
-                    <Star className="absolute -top-1 -right-1 w-3 h-3 text-yellow-300 fill-current" />
-                  )}
-                </div>
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-                  <div className="bg-stone-800 text-white p-2 rounded border border-stone-600 text-xs whitespace-nowrap shadow-lg">
-                    <div className="font-bold text-yellow-400">{item.name}</div>
-                    {item.description && <div className="text-gray-300 mt-1">{item.description}</div>}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className={`text-xs bg-gradient-to-r ${getRarityColor(item.rarity)}`}>
-                        {item.rarity}
-                      </Badge>
-                      {item.category && <span className="text-gray-400">{item.category}</span>}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                      <div className="bg-stone-800 text-white p-2 rounded border border-stone-600 text-xs whitespace-nowrap shadow-lg relative">
+                        <div className="font-bold text-yellow-400 flex items-center justify-between">
+                          <span>{item.name}</span>
+                          {item.nationImageUrl && (
+                            <div className="w-6 h-6 rounded border border-stone-500 overflow-hidden bg-stone-700 ml-2 flex-shrink-0">
+                              <img
+                                src={item.nationImageUrl || "/placeholder.svg"}
+                                alt="Nation"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {item.description && <div className="text-gray-300 mt-1">{item.description}</div>}
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs bg-gradient-to-r ${getRarityColor(item.rarity)}`}
+                          >
+                            {item.rarity}
+                          </Badge>
+                          {item.category && <span className="text-gray-400">{item.category}</span>}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-6 h-6 p-0 bg-stone-700 border-stone-600 hover:bg-stone-600"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        <Eye className="w-3 h-3 text-white" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-card/95 backdrop-blur-sm border-2 border-border max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Make Trade Request</DialogTitle>
-                      </DialogHeader>
-                      <TradeRequestForm
-                        item={selectedItem}
-                        onTradeRequest={onTradeRequest}
-                        onClose={() => setSelectedItem(null)}
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
+                </DialogTrigger>
+                <DialogContent className="bg-card/95 backdrop-blur-sm border-2 border-border max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Make Trade Request</DialogTitle>
+                  </DialogHeader>
+                  <TradeRequestForm item={item} onTradeRequest={onTradeRequest} onClose={() => setSelectedItem(null)} />
+                </DialogContent>
+              </Dialog>
             ))}
           </div>
 

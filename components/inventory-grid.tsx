@@ -190,8 +190,19 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
                     )}
                   </div>
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-                    <div className="bg-stone-800 text-white p-2 rounded border border-stone-600 text-xs whitespace-nowrap shadow-lg">
-                      <div className="font-bold text-yellow-400">{item.name}</div>
+                    <div className="bg-stone-800 text-white p-2 rounded border border-stone-600 text-xs whitespace-nowrap shadow-lg relative">
+                      <div className="font-bold text-yellow-400 flex items-center justify-between">
+                        <span>{item.name}</span>
+                        {item.nationImageUrl && (
+                          <div className="w-6 h-6 rounded border border-stone-500 overflow-hidden bg-stone-700 ml-2 flex-shrink-0">
+                            <img
+                              src={item.nationImageUrl || "/placeholder.svg"}
+                              alt="Nation"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
                       {item.description && <div className="text-gray-300 mt-1">{item.description}</div>}
                       {item.quantity === 0 && <div className="text-red-400 mt-1 font-bold">OUT OF STOCK</div>}
                       <div className="flex items-center gap-2 mt-1">
@@ -296,9 +307,11 @@ function EditItemForm({ item, onSave }: { item: Item | null; onSave: (updates: P
     rarity: item?.rarity || ("common" as const),
     category: item?.category || "",
     imageUrl: item?.imageUrl || "",
+    nationImageUrl: item?.nationImageUrl || "",
   })
 
   const [imagePreview, setImagePreview] = useState<string>(item?.imageUrl || "")
+  const [nationImagePreview, setNationImagePreview] = useState<string>(item?.nationImageUrl || "")
 
   if (!item) return null
 
@@ -321,9 +334,33 @@ function EditItemForm({ item, onSave }: { item: Item | null; onSave: (updates: P
     }
   }
 
+  const handleNationImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const result = event.target?.result as string
+          if (result && typeof result === "string") {
+            setNationImagePreview(result)
+            setFormData((prev) => ({ ...prev, nationImageUrl: result }))
+          }
+        } catch (error) {
+          console.error("[v0] Error processing uploaded nation image:", error)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleRemoveImage = () => {
     setImagePreview("")
     setFormData((prev) => ({ ...prev, imageUrl: "" }))
+  }
+
+  const handleRemoveNationImage = () => {
+    setNationImagePreview("")
+    setFormData((prev) => ({ ...prev, nationImageUrl: "" }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -391,6 +428,36 @@ function EditItemForm({ item, onSave }: { item: Item | null; onSave: (updates: P
           <Input type="file" accept="image/*" onChange={handleImageUpload} className="flex-1" />
           {imagePreview && (
             <Button type="button" variant="outline" size="sm" onClick={handleRemoveImage}>
+              Remove
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Nation Image (appears in hover tooltip)</label>
+        {nationImagePreview && (
+          <div className="relative w-16 h-16 border-2 border-border rounded">
+            <img
+              src={nationImagePreview || "/placeholder.svg"}
+              alt="Nation Preview"
+              className="w-full h-full object-cover rounded"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="absolute -top-2 -right-2 w-6 h-6 p-0"
+              onClick={handleRemoveNationImage}
+            >
+              ×
+            </Button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Input type="file" accept="image/*" onChange={handleNationImageUpload} className="flex-1" />
+          {nationImagePreview && (
+            <Button type="button" variant="outline" size="sm" onClick={handleRemoveNationImage}>
               Remove
             </Button>
           )}

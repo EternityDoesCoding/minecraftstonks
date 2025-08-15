@@ -24,12 +24,15 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
     rarity: "common" as const,
     category: "",
     imageUrl: "",
+    nationImageUrl: "",
   })
 
   const [bulkItems, setBulkItems] = useState<Array<Omit<Item, "id">>>([])
   const [imagePreview, setImagePreview] = useState<string>("")
+  const [nationImagePreview, setNationImagePreview] = useState<string>("")
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const nationFileInputRef = useRef<HTMLInputElement>(null)
   const [quantityInput, setQuantityInput] = useState("1")
 
   const handleFileUpload = (file: File) => {
@@ -39,6 +42,18 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
         const result = e.target?.result as string
         setImagePreview(result)
         setFormData((prev) => ({ ...prev, imageUrl: result }))
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleNationFileUpload = (file: File) => {
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const result = e.target?.result as string
+        setNationImagePreview(result)
+        setFormData((prev) => ({ ...prev, nationImageUrl: result }))
       }
       reader.readAsDataURL(file)
     }
@@ -70,11 +85,26 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
     }
   }
 
+  const handleNationFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0) {
+      handleNationFileUpload(files[0])
+    }
+  }
+
   const clearImage = () => {
     setImagePreview("")
     setFormData((prev) => ({ ...prev, imageUrl: "" }))
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
+    }
+  }
+
+  const clearNationImage = () => {
+    setNationImagePreview("")
+    setFormData((prev) => ({ ...prev, nationImageUrl: "" }))
+    if (nationFileInputRef.current) {
+      nationFileInputRef.current.value = ""
     }
   }
 
@@ -89,11 +119,16 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
         rarity: "common",
         category: "",
         imageUrl: "",
+        nationImageUrl: "",
       })
       setQuantityInput("1")
       setImagePreview("")
+      setNationImagePreview("")
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
+      }
+      if (nationFileInputRef.current) {
+        nationFileInputRef.current.value = ""
       }
     }
   }
@@ -113,11 +148,16 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
         rarity: "common",
         category: "",
         imageUrl: "",
+        nationImageUrl: "",
       })
       setQuantityInput("1")
       setImagePreview("")
+      setNationImagePreview("")
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
+      }
+      if (nationFileInputRef.current) {
+        nationFileInputRef.current.value = ""
       }
     }
   }
@@ -206,6 +246,65 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
                   type="file"
                   accept="image/*"
                   onChange={handleFileInputChange}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nation Image (appears in tooltip)</label>
+              <div className="relative border-2 border-dashed rounded-lg p-4 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors">
+                {nationImagePreview ? (
+                  <div className="relative">
+                    <div className="w-16 h-16 mx-auto mb-2 rounded border overflow-hidden">
+                      <img
+                        src={nationImagePreview || "/placeholder.svg"}
+                        alt="Nation Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex justify-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => nationFileInputRef.current?.click()}
+                      >
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Change
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearNationImage}
+                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <ImageIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground mb-2">Optional nation/flag image for tooltip</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => nationFileInputRef.current?.click()}
+                    >
+                      <Upload className="w-3 h-3 mr-2" />
+                      Choose Nation Image
+                    </Button>
+                  </div>
+                )}
+                <input
+                  ref={nationFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleNationFileInputChange}
                   className="hidden"
                 />
               </div>

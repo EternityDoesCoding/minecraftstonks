@@ -63,11 +63,17 @@ export async function PUT(request: NextRequest) {
 
     console.log("[v0] PUT - Updating item:", id, "with image data:", !!updates.imageUrl)
 
-    const dbUpdates = {
-      ...updates,
-      image_url: updates.imageUrl || updates.image_url || "", // Map imageUrl to image_url
+    const dbUpdates = { ...updates }
+
+    // Only map imageUrl to image_url if image data is being updated
+    if (updates.imageUrl !== undefined) {
+      dbUpdates.image_url = updates.imageUrl
+      delete dbUpdates.imageUrl
+    } else if (updates.image_url !== undefined) {
+      // Keep existing image_url field if provided directly
+    } else {
+      // Don't include image_url field at all to preserve existing data
     }
-    delete dbUpdates.imageUrl // Remove the camelCase version
 
     const updatedItem = await updateItem(id, dbUpdates)
 

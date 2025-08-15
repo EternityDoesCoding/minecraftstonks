@@ -35,7 +35,10 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
     return matchesSearch && matchesCategory
   })
 
-  const categories = ["all", ...Array.from(new Set(items.map((item) => item.category)))]
+  const categories = [
+    "all",
+    ...Array.from(new Set(items.map((item) => item.category).filter((category) => category && category.trim() !== ""))),
+  ]
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {

@@ -36,7 +36,12 @@ export function PublicTradingInterface({ items, onTradeRequest }: PublicTradingI
     return matchesSearch && matchesCategory && matchesRarity
   })
 
-  const categories = ["all", ...Array.from(new Set(publicItems.map((item) => item.category)))]
+  const categories = [
+    "all",
+    ...Array.from(
+      new Set(publicItems.map((item) => item.category).filter((category) => category && category.trim() !== "")),
+    ),
+  ]
   const rarities = ["all", "common", "rare", "epic", "legendary"]
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage)

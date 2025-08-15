@@ -43,6 +43,7 @@ export interface TradeOffer {
 export type { WebhookConfig }
 
 export default function MinecraftDashboard() {
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [showAdminLogin, setShowAdminLogin] = useState(false)
   const [activeTab, setActiveTab] = useState("public")
@@ -70,20 +71,23 @@ export default function MinecraftDashboard() {
   useEffect(() => {
     const loadWebhookConfig = async () => {
       try {
+        console.log(`[v0] Session ${sessionId}: Loading webhook config`)
         const [config, passwordData] = await Promise.all([fetchWebhookConfig(), fetchAdminPassword()])
         setWebhookConfig(config)
         setAdminPassword(passwordData.password)
+        console.log(`[v0] Session ${sessionId}: Config loaded successfully`)
       } catch (error) {
-        console.error("Failed to load config:", error)
+        console.error(`[v0] Session ${sessionId}: Failed to load config:`, error)
       }
     }
 
     loadWebhookConfig()
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log(`[v0] Session ${sessionId}: Loading data`)
         setIsLoadingItems(true)
         setIsLoadingRequests(true)
 
@@ -110,8 +114,9 @@ export default function MinecraftDashboard() {
           createdAt: req.created_at,
         }))
         setTradeRequests(transformedRequests)
+        console.log(`[v0] Session ${sessionId}: Data loaded successfully`)
       } catch (error) {
-        console.error("Failed to load data:", error)
+        console.error(`[v0] Session ${sessionId}: Failed to load data:`, error)
       } finally {
         setIsLoadingItems(false)
         setIsLoadingRequests(false)
@@ -119,7 +124,7 @@ export default function MinecraftDashboard() {
     }
 
     loadData()
-  }, [])
+  }, [sessionId])
 
   useEffect(() => {
     setWebhookService(new WebhookService(webhookConfig))
@@ -127,38 +132,44 @@ export default function MinecraftDashboard() {
 
   const addItem = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
     try {
+      console.log(`[v0] Session ${sessionId}: Adding item`)
       const newItem = await createItemAPI(item)
       setInventory((prev) => [newItem, ...prev])
 
       if (webhookService) {
         await webhookService.sendNotification("newItem", newItem)
       }
+      console.log(`[v0] Session ${sessionId}: Item added successfully`)
     } catch (error) {
-      console.error("Failed to add item:", error)
+      console.error(`[v0] Session ${sessionId}: Failed to add item:`, error)
     }
   }
 
   const updateItem = async (id: number, updates: Partial<Item>) => {
     try {
+      console.log(`[v0] Session ${sessionId}: Updating item ${id}`)
       const updatedItem = await updateItemAPI(id, updates)
       setInventory((prev) => prev.map((item) => (item.id === id ? updatedItem : item)))
+      console.log(`[v0] Session ${sessionId}: Item updated successfully`)
     } catch (error) {
-      console.error("Failed to update item:", error)
+      console.error(`[v0] Session ${sessionId}: Failed to update item:`, error)
     }
   }
 
   const deleteItem = async (id: number) => {
     try {
+      console.log(`[v0] Session ${sessionId}: Deleting item ${id}`)
       await deleteItemAPI(id)
       setInventory((prev) => prev.filter((item) => item.id !== id))
+      console.log(`[v0] Session ${sessionId}: Item deleted successfully`)
     } catch (error) {
-      console.error("Failed to delete item:", error)
+      console.error(`[v0] Session ${sessionId}: Failed to delete item:`, error)
     }
   }
 
   const addTradeRequest = async (request: any) => {
     try {
-      console.log("[v0] Adding trade request with data:", request)
+      console.log(`[v0] Session ${sessionId}: Adding trade request with data:`, request)
 
       const dbRequest = {
         item_id: request.requestedItem.id,
@@ -203,19 +214,22 @@ export default function MinecraftDashboard() {
       }
 
       if (webhookService) {
-        console.log("[v0] Sending webhook notification with data:", appFormatRequest)
+        console.log(`[v0] Session ${sessionId}: Sending webhook notification with data:`, appFormatRequest)
         await webhookService.sendNotification("newTrade", appFormatRequest)
       }
+      console.log(`[v0] Session ${sessionId}: Trade request added successfully`)
     } catch (error) {
-      console.error("Failed to add trade request:", error)
+      console.error(`[v0] Session ${sessionId}: Failed to add trade request:`, error)
     }
   }
 
   const updateTradeRequest = async (id: number, updates: { status: "accepted" | "declined" }) => {
     try {
+      console.log(`[v0] Session ${sessionId}: Updating trade request ${id} to ${updates.status}`)
       const updatedRequest = await updateTradeAPI(id, updates.status)
 
-      const requests = await fetchTrades()
+      const [requests, items] = await Promise.all([fetchTrades(), fetchItems()])
+
       const transformedRequests = requests.map((req) => ({
         id: req.id,
         playerName: req.discord_user,
@@ -235,6 +249,7 @@ export default function MinecraftDashboard() {
         createdAt: req.created_at,
       }))
       setTradeRequests(transformedRequests)
+      setInventory(items)
 
       if (updates.status === "declined" && updatedRequest && webhookService) {
         const appFormatRequest = {
@@ -256,54 +271,54 @@ export default function MinecraftDashboard() {
           createdAt: updatedRequest.created_at,
         }
 
-        console.log("[v0] Sending decline webhook notification")
+        console.log(`[v0] Session ${sessionId}: Sending decline webhook notification`)
         await webhookService.sendNotification("tradeDeclined", appFormatRequest)
       }
 
       if (updates.status === "accepted" && updatedRequest) {
-        console.log("[v0] Trade accepted - processing inventory update")
-        console.log("[v0] Updated request data:", updatedRequest)
+        console.log(`[v0] Session ${sessionId}: Trade accepted - processing inventory update`)
+        console.log(`[v0] Session ${sessionId}: Updated request data:`, updatedRequest)
 
         const requestedItem = updatedRequest.item
         const requestedQuantity = updatedRequest.quantity_wanted || 1
 
-        console.log("[v0] Requested item:", requestedItem)
-        console.log("[v0] Requested quantity:", requestedQuantity)
+        console.log(`[v0] Session ${sessionId}: Requested item:`, requestedItem)
+        console.log(`[v0] Session ${sessionId}: Requested quantity:`, requestedQuantity)
         console.log(
-          "[v0] Current inventory:",
+          `[v0] Session ${sessionId}: Current inventory:`,
           inventory.map((item) => ({ id: item.id, name: item.name, quantity: item.quantity })),
         )
 
         if (requestedItem) {
           const inventoryItem = inventory.find((item) => item.name.toLowerCase() === requestedItem.name.toLowerCase())
 
-          console.log("[v0] Found inventory item:", inventoryItem)
+          console.log(`[v0] Session ${sessionId}: Found inventory item:`, inventoryItem)
 
           if (inventoryItem && inventoryItem.quantity >= requestedQuantity) {
             const newQuantity = inventoryItem.quantity - requestedQuantity
-            console.log("[v0] Updating quantity from", inventoryItem.quantity, "to", newQuantity)
+            console.log(`[v0] Session ${sessionId}: Updating quantity from`, inventoryItem.quantity, "to", newQuantity)
 
             if (newQuantity <= 0) {
-              console.log("[v0] Deleting item completely (quantity would be 0 or less)")
+              console.log(`[v0] Session ${sessionId}: Deleting item completely (quantity would be 0 or less)`)
               await deleteItemAPI(inventoryItem.id)
               setInventory((prev) => prev.filter((item) => item.id !== inventoryItem.id))
             } else {
-              console.log("[v0] Updating item quantity to", newQuantity)
+              console.log(`[v0] Session ${sessionId}: Updating item quantity to`, newQuantity)
               await updateItemAPI(inventoryItem.id, { quantity: newQuantity })
               setInventory((prev) =>
                 prev.map((item) => (item.id === inventoryItem.id ? { ...item, quantity: newQuantity } : item)),
               )
             }
           } else {
-            console.log("[v0] Cannot update inventory - item not found or insufficient quantity")
-            console.log("[v0] Item found:", !!inventoryItem)
+            console.log(`[v0] Session ${sessionId}: Cannot update inventory - item not found or insufficient quantity`)
+            console.log(`[v0] Session ${sessionId}: Item found:`, !!inventoryItem)
             console.log(
-              "[v0] Has sufficient quantity:",
+              `[v0] Session ${sessionId}: Has sufficient quantity:`,
               inventoryItem ? inventoryItem.quantity >= requestedQuantity : false,
             )
           }
         } else {
-          console.log("[v0] No requested item data in updated request")
+          console.log(`[v0] Session ${sessionId}: No requested item data in updated request`)
         }
 
         if (webhookService) {
@@ -326,12 +341,13 @@ export default function MinecraftDashboard() {
             createdAt: updatedRequest.created_at,
           }
 
-          console.log("[v0] Sending accept webhook notification")
+          console.log(`[v0] Session ${sessionId}: Sending accept webhook notification`)
           await webhookService.sendNotification("tradeAccepted", appFormatRequest)
         }
       }
+      console.log(`[v0] Session ${sessionId}: Trade request updated successfully`)
     } catch (error) {
-      console.error("Failed to update trade request:", error)
+      console.error(`[v0] Session ${sessionId}: Failed to update trade request:`, error)
     }
   }
 
@@ -367,6 +383,7 @@ export default function MinecraftDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full">
+          <div className="text-xs text-muted-foreground mb-4 text-center">Session: {sessionId.slice(-8)}</div>
           <LoginForm onLogin={() => setIsAuthenticated(true)} currentPassword={adminPassword} />
           <Button variant="ghost" onClick={() => setShowAdminLogin(false)} className="w-full mt-4">
             Back to Public View

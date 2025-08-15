@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(config)
     } else if (type === "password") {
       const password = await getAdminPassword()
+      console.log("[v0] API Config - Retrieved password from database:", password)
+      console.log("[v0] API Config - Password length:", password?.length)
+      console.log("[v0] API Config - Password type:", typeof password)
       return NextResponse.json({ password })
     }
 

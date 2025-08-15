@@ -1,0 +1,203 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #f9fafb; /* Light Gray for main backgrounds */
+  --foreground: #4b5563; /* Dark Gray for primary text */
+  --card: #ffffff; /* White for card backgrounds */
+  --card-foreground: #4b5563; /* Dark Gray for card text */
+  --popover: #ffffff; /* White for popovers */
+  --popover-foreground: #4b5563; /* Dark Gray for popover text */
+  --primary: #0891b2; /* Cyan-600 for buttons and highlights */
+  --primary-foreground: #ffffff; /* White for button text */
+  --secondary: #10b981; /* Emerald-600 for notifications */
+  --secondary-foreground: #ffffff; /* White for notification text */
+  --muted: #f9fafb; /* Light Gray for muted text */
+  --muted-foreground: #6b7280; /* Medium Gray for muted text */
+  --accent: #10b981; /* Emerald-600 for accent elements */
+  --accent-foreground: #ffffff; /* White for accent text */
+  --destructive: #be123c; /* Rose-600 for destructive actions */
+  --destructive-foreground: #ffffff; /* White for destructive text */
+  --border: #4b5563; /* Dark Gray for borders */
+  --input: #ffffff; /* White for input fields */
+  --ring: rgba(8, 145, 178, 0.3); /* Cyan ring for focus */
+  --chart-1: #10b981; /* Emerald-600 for chart elements */
+  --chart-2: #0891b2; /* Cyan-600 for chart elements */
+  --chart-3: #ec4899; /* Rose-600 for chart elements */
+  --chart-4: #f1f5f9; /* Light Gray for chart elements */
+  --chart-5: #4b5563; /* Dark Gray for chart elements */
+  --radius: 0.5rem; /* Corner rounding for buttons */
+  --sidebar: #4b5563; /* Dark Gray for sidebar background */
+  --sidebar-foreground: #ffffff; /* White for sidebar text */
+  --sidebar-primary: #0891b2; /* Cyan-600 for primary sidebar elements */
+  --sidebar-primary-foreground: #ffffff; /* White for sidebar primary text */
+  --sidebar-accent: #10b981; /* Emerald-600 for sidebar accents */
+  --sidebar-accent-foreground: #ffffff; /* White for sidebar accent text */
+  --sidebar-border: #4b5563; /* Dark Gray for sidebar borders */
+  --sidebar-ring: rgba(8, 145, 178, 0.3); /* Cyan ring for sidebar */
+}
+
+.dark {
+  --background: #1f2937; /* Dark Gray for dark mode backgrounds */
+  --foreground: #f9fafb; /* Light Gray for dark mode text */
+  --card: #374151; /* Medium Dark Gray for dark mode cards */
+  --card-foreground: #f9fafb; /* Light Gray for dark mode card text */
+  --popover: #374151; /* Medium Dark Gray for dark mode popovers */
+  --popover-foreground: #f9fafb; /* Light Gray for dark mode popover text */
+  --primary: #0891b2; /* Cyan-600 remains consistent */
+  --primary-foreground: #ffffff; /* White for button text */
+  --secondary: #10b981; /* Emerald-600 remains consistent */
+  --secondary-foreground: #ffffff; /* White for notification text */
+  --muted: #374151; /* Medium Dark Gray for muted backgrounds */
+  --muted-foreground: #9ca3af; /* Light Gray for muted text */
+  --accent: #10b981; /* Emerald-600 remains consistent */
+  --accent-foreground: #ffffff; /* White for accent text */
+  --destructive: #be123c; /* Rose-600 remains consistent */
+  --destructive-foreground: #ffffff; /* White for destructive text */
+  --border: #6b7280; /* Medium Gray for dark mode borders */
+  --input: #374151; /* Medium Dark Gray for input fields */
+  --ring: rgba(8, 145, 178, 0.3); /* Cyan ring for focus */
+  --chart-1: #10b981;
+  --chart-2: #0891b2;
+  --chart-3: #ec4899;
+  --chart-4: #374151;
+  --chart-5: #6b7280;
+  --sidebar: #1f2937; /* Dark Gray for sidebar background */
+  --sidebar-foreground: #f9fafb; /* Light Gray for sidebar text */
+  --sidebar-primary: #0891b2;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #10b981;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #6b7280;
+  --sidebar-ring: rgba(8, 145, 178, 0.3);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(to bottom, #87ceeb 0%, #e0f6ff 50%, #87ceeb 100%);
+    min-height: 100vh;
+  }
+
+  .minecraft-slot {
+    @apply relative aspect-square flex items-center justify-center cursor-pointer;
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, #8b8680 0%, #5a5651 50%, #3d3a36 100%);
+    border: 2px solid #2d2a26;
+    border-radius: 4px;
+    box-shadow: inset 2px 2px 0px #a8a196, inset -2px -2px 0px #2d2a26, 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: all 0.1s ease;
+    image-rendering: pixelated;
+  }
+
+  .minecraft-slot:hover {
+    background: linear-gradient(135deg, #9b9690 0%, #6a6661 50%, #4d4a46 100%);
+    box-shadow: inset 2px 2px 0px #b8b1a6, inset -2px -2px 0px #3d3a36, 0 4px 8px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .minecraft-slot.selected {
+    background: linear-gradient(135deg, #7a9cc6 0%, #4a6b8a 50%, #2d4a66 100%);
+    border-color: #1e3a5f;
+    box-shadow: inset 2px 2px 0px #8aacda, inset -2px -2px 0px #1e3a5f, 0 0 8px rgba(74, 107, 138, 0.6);
+  }
+
+  .minecraft-item-icon {
+    @apply relative rounded border-2;
+    width: 40px;
+    height: 40px;
+    image-rendering: pixelated;
+    overflow: hidden;
+  }
+
+  .minecraft-item-icon img {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  .minecraft-inventory-grid {
+    background: linear-gradient(135deg, #6b6660 0%, #4a453f 50%, #2d2a26 100%);
+    border: 3px solid #1a1815;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: inset 2px 2px 0px #7b7670, inset -2px -2px 0px #1a1815, 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .minecraft-hotbar {
+    @apply flex gap-1 justify-center;
+    background: linear-gradient(135deg, #6b6660 0%, #4a453f 50%, #2d2a26 100%);
+    border: 2px solid #1a1815;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: inset 1px 1px 0px #7b7670, inset -1px -1px 0px #1a1815, 0 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  .minecraft-button {
+    @apply bg-primary text-primary-foreground px-4 py-2 rounded-lg font-bold;
+    box-shadow: 0 4px 0 #0369a1, 0 6px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.1s ease;
+    image-rendering: pixelated;
+  }
+
+  .minecraft-button:hover {
+    transform: translateY(1px);
+    box-shadow: 0 3px 0 #0369a1, 0 4px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  .minecraft-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #0369a1, 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  img {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+}

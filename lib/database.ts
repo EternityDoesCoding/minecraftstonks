@@ -590,8 +590,7 @@ export async function verifyAdminPassword(inputPassword: string): Promise<boolea
   if (!isServer || useLocalStorage) {
     const storedPassword = getFromStorage("minecraft-admin-password")
     const password = storedPassword.length > 0 ? storedPassword[0] : "Flugel"
-    // For localStorage, check both plain text (legacy) and hashed
-    return inputPassword === password || hashPassword(inputPassword) === password
+    return inputPassword === password
   }
 
   try {
@@ -603,21 +602,17 @@ export async function verifyAdminPassword(inputPassword: string): Promise<boolea
       LIMIT 1
     `
     const storedPassword = config ? config.password : "Flugel"
-
-    // Check both plain text (legacy) and hashed password for backward compatibility
-    return inputPassword === storedPassword || hashPassword(inputPassword) === storedPassword
+    return inputPassword === storedPassword
   } catch (error) {
     console.error("[v0] Database error, falling back to localStorage:", error)
     const storedPassword = getFromStorage("minecraft-admin-password")
     const password = storedPassword.length > 0 ? storedPassword[0] : "Flugel"
-    return inputPassword === password || hashPassword(inputPassword) === password
+    return inputPassword === password
   }
 }
 
 export async function saveAdminPassword(password: string): Promise<void> {
   initializeDatabase()
-
-  const hashedPassword = hashPassword(password)
 
   const isServer =
     typeof process !== "undefined" &&
@@ -625,7 +620,7 @@ export async function saveAdminPassword(password: string): Promise<void> {
     (process.env.NODE_ENV !== undefined || process.env.VERCEL !== undefined)
 
   if (!isServer || useLocalStorage) {
-    saveToStorage("minecraft-admin-password", [hashedPassword])
+    saveToStorage("minecraft-admin-password", [password])
     return
   }
 
@@ -634,14 +629,14 @@ export async function saveAdminPassword(password: string): Promise<void> {
 
     await sql`
       INSERT INTO admin_config (password, updated_at)
-      VALUES (${hashedPassword}, CURRENT_TIMESTAMP)
+      VALUES (${password}, CURRENT_TIMESTAMP)
       ON CONFLICT (id) DO UPDATE SET
         password = EXCLUDED.password,
         updated_at = EXCLUDED.updated_at
     `
   } catch (error) {
     console.error("[v0] Database error, saving to localStorage:", error)
-    saveToStorage("minecraft-admin-password", [hashedPassword])
+    saveToStorage("minecraft-admin-password", [password])
   }
 }
 

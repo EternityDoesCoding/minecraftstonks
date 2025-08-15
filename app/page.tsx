@@ -379,6 +379,38 @@ export default function MinecraftDashboard() {
     }
   }
 
+  const refreshTrades = async () => {
+    try {
+      console.log(`[v0] Session ${sessionId}: Refreshing trade requests`)
+      setIsLoadingRequests(true)
+      const requests = await fetchTrades()
+      const transformedRequests = requests.map((req) => ({
+        id: req.id,
+        playerName: req.discord_user,
+        discordUser: req.discord_user,
+        requestedItem: req.item || {
+          id: req.item_id,
+          name: "Unknown Item",
+          description: "",
+          quantity: 1,
+          rarity: "common",
+          category: "resource",
+          imageUrl: "",
+        },
+        requestedQuantity: req.quantity_wanted,
+        offerMessage: req.offer_message,
+        status: req.status,
+        createdAt: req.created_at,
+      }))
+      setTradeRequests(transformedRequests)
+      console.log(`[v0] Session ${sessionId}: Trade requests refreshed successfully`)
+    } catch (error) {
+      console.error(`[v0] Session ${sessionId}: Failed to refresh trade requests:`, error)
+    } finally {
+      setIsLoadingRequests(false)
+    }
+  }
+
   if (showAdminLogin && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -512,7 +544,11 @@ export default function MinecraftDashboard() {
                 <div className="text-muted-foreground">Loading trade requests...</div>
               </div>
             ) : (
-              <TradeManagement tradeRequests={tradeRequests} onUpdateTradeRequest={updateTradeRequest} />
+              <TradeManagement
+                tradeRequests={tradeRequests}
+                onUpdateTradeRequest={updateTradeRequest}
+                onRefreshTrades={refreshTrades}
+              />
             )}
           </TabsContent>
 

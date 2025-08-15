@@ -3,15 +3,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Clock, User, MessageSquare, CheckCircle, XCircle, Hash } from "lucide-react"
+import { Clock, User, MessageSquare, CheckCircle, XCircle, Hash, RefreshCw } from "lucide-react"
 import type { TradeRequest } from "@/app/page"
 
 interface TradeManagementProps {
   tradeRequests: TradeRequest[]
   onUpdateTradeRequest: (id: number, updates: Partial<TradeRequest>) => void
+  onRefreshTrades?: () => void
 }
 
-export function TradeManagement({ tradeRequests, onUpdateTradeRequest }: TradeManagementProps) {
+export function TradeManagement({ tradeRequests, onUpdateTradeRequest, onRefreshTrades }: TradeManagementProps) {
   const pendingRequests = tradeRequests.filter((request) => request.status === "pending")
   const completedRequests = tradeRequests.filter((request) => request.status !== "pending")
 
@@ -67,11 +68,15 @@ export function TradeManagement({ tradeRequests, onUpdateTradeRequest }: TradeMa
     <div className="space-y-6">
       <Card className="bg-card/80 backdrop-blur-sm border-2 border-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Pending Trade Requests ({pendingRequests.length})
-          </CardTitle>
-          <CardDescription>Review and respond to incoming trade requests</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5" />
+                Pending Trade Requests ({pendingRequests.length})
+              </CardTitle>
+              <CardDescription>Review and respond to incoming trade requests</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {pendingRequests.length === 0 ? (
@@ -183,6 +188,19 @@ export function TradeManagement({ tradeRequests, onUpdateTradeRequest }: TradeMa
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {onRefreshTrades && (
+            <div className="flex justify-center mt-6 pt-4 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefreshTrades}
+                className="flex items-center gap-2 bg-transparent"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh Trades
+              </Button>
             </div>
           )}
         </CardContent>

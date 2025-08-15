@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -125,7 +124,7 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
                           src={item.imageUrl || "/placeholder.svg"}
                           alt={item.name}
                           className={`w-full h-full object-cover ${item.quantity === 0 ? "grayscale" : ""}`}
-                          onError={(e) => {
+                          onError={(event) => {
                             try {
                               const safeImageUrl = item.imageUrl || ""
                               const safePrefix =
@@ -136,16 +135,32 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
                                 imageUrlLength: safeImageUrl.length,
                                 imageUrlPrefix: safePrefix,
                                 isBase64: safeImageUrl.startsWith("data:image/"),
+                                timestamp: new Date().toISOString(),
+                                currentSrc: event.currentTarget.src,
+                                naturalWidth: event.currentTarget.naturalWidth,
+                                naturalHeight: event.currentTarget.naturalHeight,
                               })
+
+                              if (safeImageUrl && safeImageUrl.startsWith("data:image/") && safeImageUrl.length > 100) {
+                                console.warn("[v0] Valid base64 image failed to load, retrying...")
+                                setTimeout(() => {
+                                  if (event.currentTarget && event.currentTarget.src !== safeImageUrl) {
+                                    event.currentTarget.src = safeImageUrl
+                                  }
+                                }, 100)
+                                return
+                              }
                             } catch (stringError) {
                               console.error("[v0] Image failed to load for:", item.name, "- string processing error")
                             }
-                            // Fallback to placeholder on error
-                            e.currentTarget.style.display = "none"
-                            e.currentTarget.nextElementSibling?.classList.remove("hidden")
+                            event.currentTarget.style.display = "none"
+                            event.currentTarget.nextElementSibling?.classList.remove("hidden")
                           }}
-                          onLoad={() => {
+                          onLoad={(event) => {
                             console.log("[v0] Image loaded successfully for:", item.name)
+                            const img = event.currentTarget as HTMLImageElement
+                            img.style.display = "block"
+                            img.nextElementSibling?.classList.add("hidden")
                           }}
                         />
                         <div className="hidden w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
@@ -197,8 +212,8 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
                           size="sm"
                           variant="outline"
                           className="w-6 h-6 p-0 bg-stone-700 border-stone-600 hover:bg-stone-600"
-                          onClick={(e) => {
-                            e.stopPropagation()
+                          onClick={(event) => {
+                            event.stopPropagation()
                             setEditingItem(item)
                           }}
                         >
@@ -223,8 +238,8 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGr
                       size="sm"
                       variant="outline"
                       className="w-6 h-6 p-0 bg-red-700 border-red-600 hover:bg-red-600 text-white"
-                      onClick={(e) => {
-                        e.stopPropagation()
+                      onClick={(event) => {
+                        event.stopPropagation()
                         onDeleteItem(item.id)
                       }}
                     >

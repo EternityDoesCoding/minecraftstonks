@@ -9,20 +9,20 @@ export async function GET() {
     const transformedItems = items.map((item) => ({
       ...item,
       imageUrl: item.image_url || "", // Map image_url to imageUrl and ensure it's a string
-      nationImageUrl: item.nation_image_url || "", // Map nation_image_url to nationImageUrl
+      nationId: item.nation_id || null, // Map nation_id to nationId
     }))
 
     console.log("[v0] GET - Item image data:")
     transformedItems.forEach((item) => {
       const hasImage = !!item.imageUrl && item.imageUrl.length > 0
-      const hasNationImage = !!item.nationImageUrl && item.nationImageUrl.length > 0
+      const hasNationAssignment = !!item.nationId
       const imagePrefix = hasImage ? item.imageUrl.substring(0, 30) + "..." : "NO IMAGE"
       console.log(
-        `[v0] - ${item.name} (id:${item.id}): hasImage=${hasImage}, hasNationImage=${hasNationImage}, length=${item.imageUrl?.length || 0}, prefix="${imagePrefix}"`,
+        `[v0] - ${item.name} (id:${item.id}): hasImage=${hasImage}, hasNationAssignment=${hasNationAssignment}, length=${item.imageUrl?.length || 0}, prefix="${imagePrefix}"`,
       )
     })
 
-    console.log("[v0] GET - Returning", transformedItems.length, "items with imageUrl and nationImageUrl fields")
+    console.log("[v0] GET - Returning", transformedItems.length, "items with imageUrl and nationId fields")
 
     return NextResponse.json(transformedItems)
   } catch (error) {
@@ -40,24 +40,24 @@ export async function POST(request: NextRequest) {
       item.name,
       "with image data:",
       !!item.imageUrl,
-      "nation image:",
-      !!item.nationImageUrl,
+      "nation assignment:",
+      !!item.nationId,
     )
 
     const dbItem = {
       ...item,
       image_url: item.imageUrl || "", // Map imageUrl to image_url
-      nation_image_url: item.nationImageUrl || "", // Map nationImageUrl to nation_image_url
+      nation_id: item.nationId || null, // Map nationId to nation_id
     }
     delete dbItem.imageUrl // Remove the camelCase version
-    delete dbItem.nationImageUrl // Remove the camelCase version
+    delete dbItem.nationId // Remove the camelCase version
 
     const newItem = await createItem(dbItem)
 
     const responseItem = {
       ...newItem,
       imageUrl: newItem.image_url || "",
-      nationImageUrl: newItem.nation_image_url || "",
+      nationId: newItem.nation_id || null,
     }
 
     console.log("[v0] POST - Created item:", responseItem.name, "with id:", responseItem.id)
@@ -78,8 +78,8 @@ export async function PUT(request: NextRequest) {
       id,
       "with image data:",
       !!updates.imageUrl,
-      "nation image:",
-      !!updates.nationImageUrl,
+      "nation assignment:",
+      !!updates.nationId,
     )
 
     const dbUpdates = { ...updates }
@@ -88,20 +88,11 @@ export async function PUT(request: NextRequest) {
     if (updates.imageUrl !== undefined) {
       dbUpdates.image_url = updates.imageUrl
       delete dbUpdates.imageUrl
-    } else if (updates.image_url !== undefined) {
-      // Keep existing image_url field if provided directly
-    } else {
-      // Don't include image_url field at all to preserve existing data
     }
 
-    // Only map nationImageUrl to nation_image_url if nation image data is being updated
-    if (updates.nationImageUrl !== undefined) {
-      dbUpdates.nation_image_url = updates.nationImageUrl
-      delete dbUpdates.nationImageUrl
-    } else if (updates.nation_image_url !== undefined) {
-      // Keep existing nation_image_url field if provided directly
-    } else {
-      // Don't include nation_image_url field at all to preserve existing data
+    if (updates.nationId !== undefined) {
+      dbUpdates.nation_id = updates.nationId
+      delete dbUpdates.nationId
     }
 
     const updatedItem = await updateItem(id, dbUpdates)
@@ -109,7 +100,7 @@ export async function PUT(request: NextRequest) {
     const responseItem = {
       ...updatedItem,
       imageUrl: updatedItem.image_url || "",
-      nationImageUrl: updatedItem.nation_image_url || "",
+      nationId: updatedItem.nation_id || null,
     }
 
     console.log(
@@ -117,8 +108,8 @@ export async function PUT(request: NextRequest) {
       responseItem.name,
       "with image:",
       !!responseItem.imageUrl,
-      "nation image:",
-      !!responseItem.nationImageUrl,
+      "nation assignment:",
+      !!responseItem.nationId,
     )
 
     return NextResponse.json(responseItem)

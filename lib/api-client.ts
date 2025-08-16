@@ -99,3 +99,37 @@ export async function saveAdminPasswordAPI(password: string) {
   if (!response.ok) throw new Error("Failed to save admin password")
   return response.json()
 }
+
+export async function fetchNations() {
+  const response = await fetch("/api/nations")
+  if (!response.ok) throw new Error("Failed to fetch nations")
+  return response.json()
+}
+
+export async function createNationAPI(nation: any) {
+  const response = await fetch("/api/nations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(nation),
+  })
+  if (!response.ok) throw new Error("Failed to create nation")
+  return response.json()
+}
+
+export async function updateNationAPI(id: number, updates: any) {
+  const response = await fetch(`/api/nations?id=${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updates),
+  })
+  if (!response.ok) throw new Error("Failed to update nation")
+  return response.json()
+}
+
+export async function deleteNationAPI(id: number) {
+  const response = await fetch(`/api/nations?id=${id}`, {
+    method: "DELETE",
+  })
+  if (!response.ok) throw new Error("Failed to delete nation")
+  return response.json()
+}

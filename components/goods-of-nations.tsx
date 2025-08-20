@@ -215,28 +215,45 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
                           <div
                             className="group relative bg-muted/30 rounded-lg p-3 border hover:bg-muted/50 transition-colors cursor-pointer"
                           >
-                        <div
-                          className={`minecraft-item-icon w-16 h-16 mx-auto mb-2 bg-gradient-to-br ${getRarityColor(item.rarity)}`}
-                        >
-                          {item.imageUrl ? (
-                            <img
-                              src={item.imageUrl || "/placeholder.svg"}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
-                              <span className="text-xs font-bold text-stone-700">
-                                {item.name.charAt(0).toUpperCase()}
-                              </span>
+                        {(() => {
+                          const nation = nations.find((n) => n.id === item.nationId)
+                          return (
+                            <div className={`minecraft-item-icon bg-gradient-to-br ${getRarityColor(item.rarity)}`}>
+                              {item.imageUrl ? (
+                                <img
+                                  src={item.imageUrl || "/placeholder.svg"}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-stone-700">
+                                    {item.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              {item.quantity > 1 && (
+                                <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm border border-stone-600">
+                                  {item.quantity}
+                                </div>
+                              )}
+                              {item.rarity === "legendary" && (
+                                <svg className="absolute -top-1 -right-1 w-3 h-3 text-yellow-300 fill-current" viewBox="0 0 24 24">
+                                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                                </svg>
+                              )}
+                              {nation?.flag_url && (
+                                <div className="absolute -top-1 -left-1 w-4 h-4 rounded border border-stone-600 overflow-hidden bg-stone-800">
+                                  <img
+                                    src={nation.flag_url || "/placeholder.svg"}
+                                    alt={nation.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {item.quantity > 1 && (
-                            <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm border border-stone-600">
-                              {item.quantity}
-                            </div>
-                          )}
-                        </div>
+                          )
+                        })()}
 
                         <div className="text-center">
                           <h4 className="font-medium text-sm truncate" title={item.name}>

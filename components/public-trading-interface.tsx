@@ -17,17 +17,16 @@ interface PublicTradingInterfaceProps {
   items: Item[]
   nations: Nation[]
   onTradeRequest: (request: Omit<TradeRequest, "id" | "createdAt">) => void
-  initialTab?: "marketplace" | "nations"
 }
 
-export function PublicTradingInterface({ items, nations, onTradeRequest, initialTab = "marketplace" }: PublicTradingInterfaceProps) {
+export function PublicTradingInterface({ items, nations, onTradeRequest }: PublicTradingInterfaceProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedRarity, setSelectedRarity] = useState("all")
   const [selectedNation, setSelectedNation] = useState("all")
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [activeTab, setActiveTab] = useState(initialTab)
+  const [activeTab, setActiveTab] = useState("marketplace")
   const itemsPerPage = 36 // 4 rows of 9 items for marketplace
 
   const publicItems = items.filter((item) => item.isPublic !== false && item.quantity > 0)

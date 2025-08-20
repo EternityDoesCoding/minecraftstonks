@@ -1,3 +1,4 @@
+export const runtime = "nodejs"
 import { type NextRequest, NextResponse } from "next/server"
 import { getItems, createItem, updateItem, deleteItem } from "@/lib/database"
 

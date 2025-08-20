@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useCallback, memo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,46 +15,11 @@ interface GoodsOfNationsProps {
   isPublicView?: boolean
 }
 
-export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = false }: GoodsOfNationsProps) {
-  // Use refs to persist state across re-renders
-  const searchTermRef = useRef("")
-  const selectedRarityRef = useRef("all")
-  const selectedCategoryRef = useRef("all")
-  const expandedNationsRef = useRef<Set<number>>(new Set())
-  
+export const GoodsOfNations = React.memo(function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = false }: GoodsOfNationsProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRarity, setSelectedRarity] = useState("all")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [expandedNations, setExpandedNations] = useState<Set<number>>(new Set())
-
-  // Initialize state from refs on mount
-  useEffect(() => {
-    setSearchTerm(searchTermRef.current)
-    setSelectedRarity(selectedRarityRef.current)
-    setSelectedCategory(selectedCategoryRef.current)
-    setExpandedNations(expandedNationsRef.current)
-  }, [])
-
-  // Update refs when state changes
-  const handleSearchChange = (value: string) => {
-    searchTermRef.current = value
-    setSearchTerm(value)
-  }
-
-  const handleRarityChange = (value: string) => {
-    selectedRarityRef.current = value
-    setSelectedRarity(value)
-  }
-
-  const handleCategoryChange = (value: string) => {
-    selectedCategoryRef.current = value
-    setSelectedCategory(value)
-  }
-
-  const handleExpandedNationsChange = (newExpanded: Set<number>) => {
-    expandedNationsRef.current = newExpanded
-    setExpandedNations(newExpanded)
-  }
 
   // Group items by nation
   const itemsByNation = useMemo(() => {
@@ -84,15 +49,17 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
     return Array.from(new Set(items.map((item) => item.category).filter(Boolean)))
   }, [items])
 
-  const toggleNationExpansion = (nationId: number | null) => {
-    const newExpanded = new Set(expandedNations)
-    if (newExpanded.has(nationId || 0)) {
-      newExpanded.delete(nationId || 0)
-    } else {
-      newExpanded.add(nationId || 0)
-    }
-    handleExpandedNationsChange(newExpanded)
-  }
+  const toggleNationExpansion = useCallback((nationId: number | null) => {
+    setExpandedNations(prev => {
+      const newExpanded = new Set(prev)
+      if (newExpanded.has(nationId || 0)) {
+        newExpanded.delete(nationId || 0)
+      } else {
+        newExpanded.add(nationId || 0)
+      }
+      return newExpanded
+    })
+  }, [])
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -107,8 +74,9 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
     }
   }
 
-  const handleTradeRequest = (item: Item) => {
+  const handleTradeRequest = useCallback((item: Item) => {
     if (onTradeRequest) {
+      // Prevent the parent from re-rendering this component by not triggering unnecessary updates
       onTradeRequest({
         requestedItem: item,
         requestedQuantity: 1,
@@ -117,7 +85,7 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
         status: "pending",
       })
     }
-  }
+  }, [onTradeRequest])
 
   // Sort nations: put "Unassigned" last, then alphabetically
   const sortedNationEntries = Array.from(itemsByNation.entries()).sort(([nationIdA, itemsA], [nationIdB, itemsB]) => {
@@ -153,11 +121,11 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
               <Input
                 placeholder="Search items across all nations..."
                 value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={selectedRarity} onValueChange={handleRarityChange}>
+            <Select value={selectedRarity} onValueChange={setSelectedRarity}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filter by rarity" />
               </SelectTrigger>
@@ -169,7 +137,7 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
                 <SelectItem value="legendary">Legendary</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>

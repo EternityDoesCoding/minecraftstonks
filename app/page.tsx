@@ -512,11 +512,11 @@ export default function MinecraftDashboard() {
                   <div className="text-muted-foreground">Loading nations...</div>
                 </div>
               ) : (
-                <GoodsOfNations
+                <PublicTradingInterface
                   items={inventory}
                   nations={nations}
                   onTradeRequest={addTradeRequest}
-                  isPublicView={true}
+                  initialTab="nations"
                 />
               )}
             </TabsContent>

@@ -479,6 +479,7 @@ function TradeRequestForm({
           rarity: item.rarity,
           category: item.category,
           imageUrl: item.imageUrl,
+          nationId: item.nationId,
           isPublic: item.isPublic,
         },
         requestedQuantity: formData.requestedQuantity,

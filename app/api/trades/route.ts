@@ -10,8 +10,7 @@ export async function GET() {
       item: trade.item
         ? {
             ...trade.item,
-            imageUrl: trade.item.image_url || "",
-            nationId: (trade.item as any).nation_id ?? trade.item.nation_id ?? null,
+            imageUrl: trade.item.image_url || "", // Map image_url to imageUrl
           }
         : undefined,
     }))
@@ -48,21 +47,7 @@ export async function PUT(request: NextRequest) {
   try {
     const { id, status } = await request.json()
     const updatedTrade = await updateTradeRequestStatus(id, status)
-
-    const transformed = updatedTrade
-      ? {
-          ...updatedTrade,
-          item: updatedTrade.item
-            ? {
-                ...updatedTrade.item,
-                imageUrl: (updatedTrade.item as any).image_url || "",
-                nationId: (updatedTrade.item as any).nation_id ?? null,
-              }
-            : undefined,
-        }
-      : updatedTrade
-
-    return NextResponse.json(transformed)
+    return NextResponse.json(updatedTrade)
   } catch (error) {
     console.error("[v0] API Error updating trade:", error)
     return NextResponse.json({ error: "Failed to update trade" }, { status: 500 })

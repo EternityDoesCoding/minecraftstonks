@@ -1,4 +1,3 @@
-export const runtime = "nodejs"
 import { type NextRequest, NextResponse } from "next/server"
 import { getWebhookConfig, saveWebhookConfig, getAdminPassword, saveAdminPassword } from "@/lib/database"
 

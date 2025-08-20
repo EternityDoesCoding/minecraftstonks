@@ -1,16 +1,10 @@
-import type { Item, TradeRequest, WebhookConfig, Nation } from "@/app/page"
+import type { Item, TradeRequest, WebhookConfig } from "@/app/page"
 
 export class WebhookService {
   private config: WebhookConfig
-  private nations: Nation[]
 
-  constructor(config: WebhookConfig, nations: Nation[] = []) {
+  constructor(config: WebhookConfig) {
     this.config = config
-    this.nations = nations
-  }
-
-  updateNations(nations: Nation[]) {
-    this.nations = nations
   }
 
   async sendNotification(type: keyof WebhookConfig["events"], data: any) {
@@ -60,12 +54,6 @@ export class WebhookService {
   private createNewTradePayload(trade: TradeRequest) {
     console.log("[v0] Creating webhook payload for trade:", trade)
 
-    const itemNation = trade.requestedItem?.nationId
-      ? this.nations.find((nation) => nation.id === trade.requestedItem.nationId)
-      : null
-
-    const nationInfo = itemNation ? ` from **${itemNation.name}**` : ""
-
     return {
       embeds: [
         {
@@ -80,7 +68,7 @@ export class WebhookService {
             },
             {
               name: "🎯 They Want",
-              value: `${trade.requestedQuantity || 0}x ${trade.requestedItem?.name || "Unknown Item"}${nationInfo}`,
+              value: `${trade.requestedQuantity || 0}x ${trade.requestedItem?.name || "Unknown Item"}`,
               inline: true,
             },
             {
@@ -99,12 +87,6 @@ export class WebhookService {
   }
 
   private createTradeAcceptedPayload(trade: TradeRequest) {
-    const itemNation = trade.requestedItem?.nationId
-      ? this.nations.find((nation) => nation.id === trade.requestedItem.nationId)
-      : null
-
-    const nationInfo = itemNation ? ` from **${itemNation.name}**` : ""
-
     return {
       embeds: [
         {
@@ -119,7 +101,7 @@ export class WebhookService {
             },
             {
               name: "📤 Items Sent",
-              value: `${trade.requestedQuantity}x ${trade.requestedItem?.name}${nationInfo}`,
+              value: `${trade.requestedQuantity}x ${trade.requestedItem?.name}`,
               inline: true,
             },
             {
@@ -138,12 +120,6 @@ export class WebhookService {
   }
 
   private createTradeDeclinedPayload(trade: TradeRequest) {
-    const itemNation = trade.requestedItem?.nationId
-      ? this.nations.find((nation) => nation.id === trade.requestedItem.nationId)
-      : null
-
-    const nationInfo = itemNation ? ` from **${itemNation.name}**` : ""
-
     return {
       embeds: [
         {
@@ -158,7 +134,7 @@ export class WebhookService {
             },
             {
               name: "Requested Item",
-              value: `${trade.requestedQuantity}x ${trade.requestedItem?.name}${nationInfo}`,
+              value: `${trade.requestedQuantity}x ${trade.requestedItem?.name}`,
               inline: true,
             },
           ],

@@ -34,7 +34,6 @@ import {
   Trash2,
 } from "lucide-react"
 import type { AdminDashboardProps } from "./admin-dashboard-props" // Declare AdminDashboardProps
-import { NationsManagement } from "./nations-management"
 
 export function AdminDashboard({
   inventory,
@@ -44,10 +43,6 @@ export function AdminDashboard({
   onDeleteItem,
   onUpdatePassword,
   onClearTradeLog, // Added onClearTradeLog prop
-  nations,
-  onCreateNation,
-  onUpdateNation,
-  onDeleteNation,
 }: AdminDashboardProps) {
   const [adminPassword, setAdminPassword] = useState("")
   const [passwordUpdateSuccess, setPasswordUpdateSuccess] = useState(false)
@@ -167,10 +162,9 @@ export function AdminDashboard({
       </Card>
 
       <Tabs defaultValue="analytics" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 bg-card/80 backdrop-blur-sm border-2 border-border">
+        <TabsList className="grid w-full grid-cols-4 bg-card/80 backdrop-blur-sm border-2 border-border">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="inventory">Inventory Control</TabsTrigger>
-          <TabsTrigger value="nations">Nations</TabsTrigger>
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="system">System Settings</TabsTrigger>
         </TabsList>
@@ -294,15 +288,6 @@ export function AdminDashboard({
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="nations" className="space-y-6">
-          <NationsManagement
-            nations={nations || []}
-            onCreateNation={onCreateNation}
-            onUpdateNation={onUpdateNation}
-            onDeleteNation={onDeleteNation}
-          />
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">

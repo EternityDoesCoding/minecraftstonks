@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useCallback, memo } from "react"
+import { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,11 +15,47 @@ interface GoodsOfNationsProps {
   isPublicView?: boolean
 }
 
-export const GoodsOfNations = React.memo(function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = false }: GoodsOfNationsProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedRarity, setSelectedRarity] = useState("all")
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [expandedNations, setExpandedNations] = useState<Set<number>>(new Set())
+export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = false }: GoodsOfNationsProps) {
+  // Use refs to maintain state across re-renders
+  const stateRef = useRef({
+    searchTerm: "",
+    selectedRarity: "all",
+    selectedCategory: "all",
+    expandedNations: new Set<number>()
+  })
+
+  const [searchTerm, setSearchTermState] = useState("")
+  const [selectedRarity, setSelectedRarityState] = useState("all")
+  const [selectedCategory, setSelectedCategoryState] = useState("all")
+  const [expandedNations, setExpandedNationsState] = useState<Set<number>>(new Set())
+
+  // Initialize from ref on mount
+  useEffect(() => {
+    setSearchTermState(stateRef.current.searchTerm)
+    setSelectedRarityState(stateRef.current.selectedRarity)
+    setSelectedCategoryState(stateRef.current.selectedCategory)
+    setExpandedNationsState(stateRef.current.expandedNations)
+  }, [])
+
+  const setSearchTerm = useCallback((value: string) => {
+    stateRef.current.searchTerm = value
+    setSearchTermState(value)
+  }, [])
+
+  const setSelectedRarity = useCallback((value: string) => {
+    stateRef.current.selectedRarity = value
+    setSelectedRarityState(value)
+  }, [])
+
+  const setSelectedCategory = useCallback((value: string) => {
+    stateRef.current.selectedCategory = value
+    setSelectedCategoryState(value)
+  }, [])
+
+  const setExpandedNations = useCallback((value: Set<number>) => {
+    stateRef.current.expandedNations = value
+    setExpandedNationsState(value)
+  }, [])
 
   // Group items by nation
   const itemsByNation = useMemo(() => {
@@ -50,16 +86,14 @@ export const GoodsOfNations = React.memo(function GoodsOfNations({ items, nation
   }, [items])
 
   const toggleNationExpansion = useCallback((nationId: number | null) => {
-    setExpandedNations(prev => {
-      const newExpanded = new Set(prev)
-      if (newExpanded.has(nationId || 0)) {
-        newExpanded.delete(nationId || 0)
-      } else {
-        newExpanded.add(nationId || 0)
-      }
-      return newExpanded
-    })
-  }, [])
+    const newExpanded = new Set(expandedNations)
+    if (newExpanded.has(nationId || 0)) {
+      newExpanded.delete(nationId || 0)
+    } else {
+      newExpanded.add(nationId || 0)
+    }
+    setExpandedNations(newExpanded)
+  }, [expandedNations])
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
@@ -76,14 +110,19 @@ export const GoodsOfNations = React.memo(function GoodsOfNations({ items, nation
 
   const handleTradeRequest = useCallback((item: Item) => {
     if (onTradeRequest) {
-      // Prevent the parent from re-rendering this component by not triggering unnecessary updates
-      onTradeRequest({
+      // Create the proper request format
+      const tradeRequest = {
         requestedItem: item,
         requestedQuantity: 1,
         discordUser: "",
+        minecraftUser: "",
         offerMessage: "",
         status: "pending",
-      })
+        createdAt: new Date().toISOString()
+      }
+      
+      console.log('Submitting trade request:', tradeRequest)
+      onTradeRequest(tradeRequest)
     }
   }, [onTradeRequest])
 

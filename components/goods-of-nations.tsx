@@ -207,10 +207,18 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
                 <CardContent>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {displayItems.map((item) => (
+<<<<<<< HEAD
                       <div
                         key={item.id}
                         className="group relative bg-muted/30 rounded-lg p-3 border hover:bg-muted/50 transition-colors"
                       >
+=======
+                      <Dialog key={item.id}>
+                        <DialogTrigger asChild>
+                          <div
+                            className="group relative bg-muted/30 rounded-lg p-3 border hover:bg-muted/50 transition-colors cursor-pointer"
+                          >
+>>>>>>> parent of aafba05 (new)
                         <div
                           className={`minecraft-item-icon w-16 h-16 mx-auto mb-2 bg-gradient-to-br ${getRarityColor(item.rarity)}`}
                         >

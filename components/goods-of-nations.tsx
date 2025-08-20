@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,10 +16,45 @@ interface GoodsOfNationsProps {
 }
 
 export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = false }: GoodsOfNationsProps) {
+  // Use refs to persist state across re-renders
+  const searchTermRef = useRef("")
+  const selectedRarityRef = useRef("all")
+  const selectedCategoryRef = useRef("all")
+  const expandedNationsRef = useRef<Set<number>>(new Set())
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRarity, setSelectedRarity] = useState("all")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [expandedNations, setExpandedNations] = useState<Set<number>>(new Set())
+
+  // Initialize state from refs on mount
+  useEffect(() => {
+    setSearchTerm(searchTermRef.current)
+    setSelectedRarity(selectedRarityRef.current)
+    setSelectedCategory(selectedCategoryRef.current)
+    setExpandedNations(expandedNationsRef.current)
+  }, [])
+
+  // Update refs when state changes
+  const handleSearchChange = (value: string) => {
+    searchTermRef.current = value
+    setSearchTerm(value)
+  }
+
+  const handleRarityChange = (value: string) => {
+    selectedRarityRef.current = value
+    setSelectedRarity(value)
+  }
+
+  const handleCategoryChange = (value: string) => {
+    selectedCategoryRef.current = value
+    setSelectedCategory(value)
+  }
+
+  const handleExpandedNationsChange = (newExpanded: Set<number>) => {
+    expandedNationsRef.current = newExpanded
+    setExpandedNations(newExpanded)
+  }
 
   // Group items by nation
   const itemsByNation = useMemo(() => {
@@ -56,7 +91,7 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
     } else {
       newExpanded.add(nationId || 0)
     }
-    setExpandedNations(newExpanded)
+    handleExpandedNationsChange(newExpanded)
   }
 
   const getRarityColor = (rarity: string) => {
@@ -118,11 +153,11 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
               <Input
                 placeholder="Search items across all nations..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Select value={selectedRarity} onValueChange={setSelectedRarity}>
+            <Select value={selectedRarity} onValueChange={handleRarityChange}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filter by rarity" />
               </SelectTrigger>
@@ -134,7 +169,7 @@ export function GoodsOfNations({ items, nations, onTradeRequest, isPublicView = 
                 <SelectItem value="legendary">Legendary</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>

@@ -87,6 +87,34 @@ const ensureAdminConfigTable = async () => {
   }
 }
 
+const ensureNationsTable = async () => {
+  if (!sql) return
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS nations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        flag_url TEXT,
+        description TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+    `
+    // Create index for faster nation lookups
+    await sql`CREATE INDEX IF NOT EXISTS idx_nations_name ON nations(name)`
+
+    // Insert default "Unassigned" nation if it doesn't exist
+    await sql`
+      INSERT INTO nations (name, description) VALUES 
+        ('Unassigned', 'Items not assigned to any specific nation')
+      ON CONFLICT (name) DO NOTHING
+    `
+    console.log("[v0] Nations table ensured")
+  } catch (error) {
+    console.error("[v0] Failed to create nations table:", error)
+  }
+}
+
 const getDatabaseUrl = () => {
   if (typeof window !== "undefined") return null
   const url = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL
@@ -124,7 +152,7 @@ export interface Item {
   rarity: string
   quantity: number
   image_url?: string
-  nation_image_url?: string // Added nation_image_url field to Item interface
+  nation_id?: number | null // replaced nation_image_url with nation_id
   created_at: string
   updated_at: string
 }
@@ -151,6 +179,16 @@ export interface WebhookConfig {
   }
 }
 
+// Added Nation interface
+export interface Nation {
+  id: number
+  name: string
+  flag_url?: string
+  description?: string
+  created_at: string
+  updated_at: string
+}
+
 export async function getItems(): Promise<Item[]> {
   initializeDatabase()
 
@@ -174,7 +212,7 @@ export async function getItems(): Promise<Item[]> {
         rarity,
         quantity,
         COALESCE(image_url, '') as image_url,
-        COALESCE(nation_image_url, '') as nation_image_url,
+        nation_id,
         created_at,
         updated_at
       FROM items 
@@ -219,11 +257,11 @@ export async function createItem(item: Omit<Item, "id" | "created_at" | "updated
     console.log("[v0] Creating item with data:", {
       name: item.name,
       hasImageUrl: !!item.image_url,
-      hasNationImageUrl: !!item.nation_image_url,
+      nationId: item.nation_id,
     })
     const [dbItem] = await sql`
-      INSERT INTO items (name, description, category, rarity, quantity, image_url, nation_image_url)
-      VALUES (${item.name}, ${item.description}, ${item.category}, ${item.rarity}, ${item.quantity}, ${item.image_url}, ${item.nation_image_url})
+      INSERT INTO items (name, description, category, rarity, quantity, image_url, nation_id)
+      VALUES (${item.name}, ${item.description}, ${item.category}, ${item.rarity}, ${item.quantity}, ${item.image_url}, ${item.nation_id})
       RETURNING *
     `
     console.log("[v0] Successfully created item in database:", dbItem.name, "with id:", dbItem.id)
@@ -277,7 +315,7 @@ export async function updateItem(
         rarity = COALESCE(${updates.rarity}, rarity),
         quantity = COALESCE(${updates.quantity}, quantity),
         image_url = COALESCE(${updates.image_url}, image_url),
-        nation_image_url = COALESCE(${updates.nation_image_url}, nation_image_url),
+        nation_id = COALESCE(${updates.nation_id}, nation_id),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
@@ -350,7 +388,7 @@ export async function getTradeRequests(): Promise<TradeRequest[]> {
           'rarity', i.rarity,
           'quantity', i.quantity,
           'image_url', i.image_url,
-          'nation_image_url', i.nation_image_url
+          'nation_id', i.nation_id
         ) as item
       FROM trade_requests tr
       JOIN items i ON tr.item_id = i.id
@@ -451,7 +489,7 @@ export async function updateTradeRequestStatus(id: number, status: "accepted" | 
           'rarity', items.rarity,
           'quantity', items.quantity,
           'image_url', items.image_url,
-          'nation_image_url', items.nation_image_url
+          'nation_id', items.nation_id
         ) as item
     `
     return updatedRequest as TradeRequest
@@ -668,5 +706,146 @@ export async function clearTradeRequests(): Promise<void> {
   } catch (error) {
     console.error("[v0] Database error, clearing localStorage:", error)
     saveToStorage("minecraft-trade-requests", [])
+  }
+}
+
+export async function getNations(): Promise<Nation[]> {
+  initializeDatabase()
+
+  const isServer =
+    typeof process !== "undefined" &&
+    process.env &&
+    (process.env.NODE_ENV !== undefined || process.env.VERCEL !== undefined)
+
+  if (!isServer || useLocalStorage) {
+    return getFromStorage("minecraft-nations")
+  }
+
+  try {
+    await ensureNationsTable()
+    const nations = await sql`
+      SELECT * FROM nations 
+      ORDER BY name ASC
+    `
+    console.log("[v0] Successfully retrieved", nations.length, "nations from database")
+    return nations as Nation[]
+  } catch (error) {
+    console.error("[v0] Database error, falling back to localStorage:", error)
+    return getFromStorage("minecraft-nations")
+  }
+}
+
+export async function createNation(nation: Omit<Nation, "id" | "created_at" | "updated_at">): Promise<Nation> {
+  initializeDatabase()
+
+  const isServer =
+    typeof process !== "undefined" &&
+    process.env &&
+    (process.env.NODE_ENV !== undefined || process.env.VERCEL !== undefined)
+
+  const newNation: Nation = {
+    ...nation,
+    id: Date.now(),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+
+  if (!isServer || useLocalStorage) {
+    const nations = getFromStorage("minecraft-nations")
+    nations.push(newNation)
+    saveToStorage("minecraft-nations", nations)
+    return newNation
+  }
+
+  try {
+    await ensureNationsTable()
+    const [dbNation] = await sql`
+      INSERT INTO nations (name, flag_url, description)
+      VALUES (${nation.name}, ${nation.flag_url}, ${nation.description})
+      RETURNING *
+    `
+    console.log("[v0] Successfully created nation in database:", dbNation.name)
+    return dbNation as Nation
+  } catch (error) {
+    console.error("[v0] Database error, saving to localStorage:", error)
+    const nations = getFromStorage("minecraft-nations")
+    nations.push(newNation)
+    saveToStorage("minecraft-nations", nations)
+    return newNation
+  }
+}
+
+export async function updateNation(
+  id: number,
+  updates: Partial<Omit<Nation, "id" | "created_at" | "updated_at">>,
+): Promise<Nation> {
+  initializeDatabase()
+
+  const isServer =
+    typeof process !== "undefined" &&
+    process.env &&
+    (process.env.NODE_ENV !== undefined || process.env.VERCEL !== undefined)
+
+  if (!isServer || useLocalStorage) {
+    const nations = getFromStorage("minecraft-nations")
+    const index = nations.findIndex((nation: Nation) => nation.id === id)
+    if (index !== -1) {
+      nations[index] = { ...nations[index], ...updates, updated_at: new Date().toISOString() }
+      saveToStorage("minecraft-nations", nations)
+      return nations[index]
+    }
+    throw new Error("Nation not found")
+  }
+
+  try {
+    const [updatedNation] = await sql`
+      UPDATE nations 
+      SET 
+        name = COALESCE(${updates.name}, name),
+        flag_url = COALESCE(${updates.flag_url}, flag_url),
+        description = COALESCE(${updates.description}, description),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${id}
+      RETURNING *
+    `
+    return updatedNation as Nation
+  } catch (error) {
+    console.error("[v0] Database error, updating in localStorage:", error)
+    const nations = getFromStorage("minecraft-nations")
+    const index = nations.findIndex((nation: Nation) => nation.id === id)
+    if (index !== -1) {
+      nations[index] = { ...nations[index], ...updates, updated_at: new Date().toISOString() }
+      saveToStorage("minecraft-nations", nations)
+      return nations[index]
+    }
+    throw new Error("Nation not found")
+  }
+}
+
+export async function deleteNation(id: number): Promise<boolean> {
+  initializeDatabase()
+
+  const isServer =
+    typeof process !== "undefined" &&
+    process.env &&
+    (process.env.NODE_ENV !== undefined || process.env.VERCEL !== undefined)
+
+  if (!isServer || useLocalStorage) {
+    const nations = getFromStorage("minecraft-nations")
+    const filtered = nations.filter((nation: Nation) => nation.id !== id)
+    saveToStorage("minecraft-nations", filtered)
+    return true
+  }
+
+  try {
+    await sql`DELETE FROM nations WHERE id = ${id}`
+    console.log("[v0] Successfully deleted nation from database")
+    return true
+  } catch (error) {
+    console.error("[v0] Database error, deleting from localStorage:", error)
+    const nations = getFromStorage("minecraft-nations")
+    const filtered = nations.filter((nation: Nation) => nation.id !== id)
+    saveToStorage("minecraft-nations", filtered)
+    return true
   }
 }

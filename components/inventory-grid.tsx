@@ -9,18 +9,16 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Edit, Trash2, Search, Package, Flag } from "lucide-react"
+import { Edit, Trash2, Search, Package } from "lucide-react"
 import type { Item } from "@/app/page"
-import type { Nation } from "@/lib/database"
 
 interface InventoryGridProps {
   items: Item[]
   onUpdateItem: (id: number, updates: Partial<Item>) => void
   onDeleteItem: (id: number) => void
-  nations?: Nation[]
 }
 
-export function InventoryGrid({ items, onUpdateItem, onDeleteItem, nations = [] }: InventoryGridProps) {
+export function InventoryGrid({ items, onUpdateItem, onDeleteItem }: InventoryGridProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [editingItem, setEditingItem] = useState<Item | null>(null)
@@ -109,177 +107,164 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem, nations = [] 
       </CardHeader>
       <CardContent>
         <div className="minecraft-inventory-grid grid grid-cols-9 gap-4">
-          {inventorySlots.map(({ item, index }) => {
-            const itemNation = item ? nations.find((n) => n.id === item.nationId) : null
+          {inventorySlots.map(({ item, index }) => (
+            <div
+              key={index}
+              className={`minecraft-slot group cursor-pointer relative ${selectedSlot === index ? "selected" : ""}`}
+              onClick={() => setSelectedSlot(selectedSlot === index ? null : index)}
+            >
+              {item ? (
+                <>
+                  <div
+                    className={`minecraft-item-icon bg-gradient-to-br ${getRarityColor(item.rarity)} ${item.quantity === 0 ? "opacity-50" : ""}`}
+                  >
+                    {item.imageUrl ? (
+                      <>
+                        <img
+                          src={item.imageUrl || "/placeholder.svg"}
+                          alt={item.name}
+                          className={`w-full h-full object-cover ${item.quantity === 0 ? "grayscale" : ""}`}
+                          onError={(event) => {
+                            try {
+                              const safeImageUrl = item.imageUrl || ""
+                              const safePrefix =
+                                safeImageUrl.length > 50 ? safeImageUrl.slice(0, 50) + "..." : safeImageUrl
 
-            return (
-              <div
-                key={index}
-                className={`minecraft-slot group cursor-pointer relative ${selectedSlot === index ? "selected" : ""}`}
-                onClick={() => setSelectedSlot(selectedSlot === index ? null : index)}
-              >
-                {item ? (
-                  <>
-                    <div
-                      className={`minecraft-item-icon bg-gradient-to-br ${getRarityColor(item.rarity)} ${item.quantity === 0 ? "opacity-50" : ""}`}
-                    >
-                      {item.imageUrl ? (
-                        <>
-                          <img
-                            src={item.imageUrl || "/placeholder.svg"}
-                            alt={item.name}
-                            className={`w-full h-full object-cover ${item.quantity === 0 ? "grayscale" : ""}`}
-                            onError={(event) => {
-                              try {
-                                const safeImageUrl = item.imageUrl || ""
-                                const safePrefix =
-                                  safeImageUrl.length > 50 ? safeImageUrl.slice(0, 50) + "..." : safeImageUrl
+                              console.error("[v0] Image failed to load for:", item.name, {
+                                hasImageUrl: !!item.imageUrl,
+                                imageUrlLength: safeImageUrl.length,
+                                imageUrlPrefix: safePrefix,
+                                isBase64: safeImageUrl.startsWith("data:image/"),
+                                timestamp: new Date().toISOString(),
+                                currentSrc: event.currentTarget.src,
+                                naturalWidth: event.currentTarget.naturalWidth,
+                                naturalHeight: event.currentTarget.naturalHeight,
+                              })
 
-                                console.error("[v0] Image failed to load for:", item.name, {
-                                  hasImageUrl: !!item.imageUrl,
-                                  imageUrlLength: safeImageUrl.length,
-                                  imageUrlPrefix: safePrefix,
-                                  isBase64: safeImageUrl.startsWith("data:image/"),
-                                  timestamp: new Date().toISOString(),
-                                  currentSrc: event.currentTarget.src,
-                                  naturalWidth: event.currentTarget.naturalWidth,
-                                  naturalHeight: event.currentTarget.naturalHeight,
-                                })
-
-                                if (
-                                  safeImageUrl &&
-                                  safeImageUrl.startsWith("data:image/") &&
-                                  safeImageUrl.length > 100
-                                ) {
-                                  console.warn("[v0] Valid base64 image failed to load, retrying...")
-                                  setTimeout(() => {
-                                    if (event.currentTarget && event.currentTarget.src !== safeImageUrl) {
-                                      event.currentTarget.src = safeImageUrl
-                                    }
-                                  }, 100)
-                                  return
-                                }
-                              } catch (stringError) {
-                                console.error("[v0] Image failed to load for:", item.name, "- string processing error")
+                              if (safeImageUrl && safeImageUrl.startsWith("data:image/") && safeImageUrl.length > 100) {
+                                console.warn("[v0] Valid base64 image failed to load, retrying...")
+                                setTimeout(() => {
+                                  if (event.currentTarget && event.currentTarget.src !== safeImageUrl) {
+                                    event.currentTarget.src = safeImageUrl
+                                  }
+                                }, 100)
+                                return
                               }
-                              event.currentTarget.style.display = "none"
-                              event.currentTarget.nextElementSibling?.classList.remove("hidden")
-                            }}
-                            onLoad={(event) => {
-                              console.log("[v0] Image loaded successfully for:", item.name)
-                              const img = event.currentTarget as HTMLImageElement
-                              img.style.display = "block"
-                              img.nextElementSibling?.classList.add("hidden")
-                            }}
-                          />
-                          <div className="hidden w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
-                            <span className="text-xs font-bold text-stone-700">
-                              {item.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div
-                          className={`w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center ${item.quantity === 0 ? "grayscale" : ""}`}
-                        >
+                            } catch (stringError) {
+                              console.error("[v0] Image failed to load for:", item.name, "- string processing error")
+                            }
+                            event.currentTarget.style.display = "none"
+                            event.currentTarget.nextElementSibling?.classList.remove("hidden")
+                          }}
+                          onLoad={(event) => {
+                            console.log("[v0] Image loaded successfully for:", item.name)
+                            const img = event.currentTarget as HTMLImageElement
+                            img.style.display = "block"
+                            img.nextElementSibling?.classList.add("hidden")
+                          }}
+                        />
+                        <div className="hidden w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
                           <span className="text-xs font-bold text-stone-700">{item.name.charAt(0).toUpperCase()}</span>
                         </div>
-                      )}
-                      {item.quantity > 1 ? (
-                        <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm border border-stone-600">
-                          {item.quantity}
-                        </div>
-                      ) : item.quantity === 0 ? (
-                        <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-xs font-bold px-1 rounded-sm border border-red-500">
-                          OUT
-                        </div>
-                      ) : null}
-                      {item.quantity === 0 && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                          <span className="text-red-400 text-xs font-bold bg-black/60 px-1 rounded">OUT OF STOCK</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-                      <div className="bg-stone-800 text-white p-2 rounded border border-stone-600 text-xs shadow-lg relative max-w-xs">
-                        <div className="font-bold text-yellow-400">{item.name}</div>
-                        {item.description && <div className="text-gray-300 mt-1">{item.description}</div>}
-                        {item.quantity === 0 && <div className="text-red-400 mt-1 font-bold">OUT OF STOCK</div>}
-                        {itemNation && (
-                          <div className="flex items-center gap-2 mt-2 pt-1 border-t border-stone-600">
-                            {itemNation.flag_url ? (
-                              <img
-                                src={itemNation.flag_url || "/placeholder.svg"}
-                                alt={`${itemNation.name} flag`}
-                                className="w-4 h-4 object-cover border border-stone-500 rounded flex-shrink-0"
-                              />
-                            ) : (
-                              <Flag className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            )}
-                            <span className="text-xs text-blue-300 font-medium">{itemNation.name}</span>
+                      </>
+                    ) : (
+                      <div
+                        className={`w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center ${item.quantity === 0 ? "grayscale" : ""}`}
+                      >
+                        <span className="text-xs font-bold text-stone-700">{item.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                    )}
+                    {item.quantity > 1 ? (
+                      <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm border border-stone-600">
+                        {item.quantity}
+                      </div>
+                    ) : item.quantity === 0 ? (
+                      <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-xs font-bold px-1 rounded-sm border border-red-500">
+                        OUT
+                      </div>
+                    ) : null}
+                    {item.quantity === 0 && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="text-red-400 text-xs font-bold bg-black/60 px-1 rounded">OUT OF STOCK</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                    <div className="bg-stone-800 text-white p-2 rounded border border-stone-600 text-xs whitespace-nowrap shadow-lg relative">
+                      <div className="font-bold text-yellow-400 flex items-center justify-between">
+                        <span>{item.name}</span>
+                        {item.nationImageUrl && (
+                          <div className="w-6 h-6 rounded border border-stone-500 overflow-hidden bg-stone-700 ml-2 flex-shrink-0">
+                            <img
+                              src={item.nationImageUrl || "/placeholder.svg"}
+                              alt="Nation"
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         )}
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge
-                            variant="secondary"
-                            className={`text-xs bg-gradient-to-r ${getRarityColor(item.rarity)}`}
-                          >
-                            {item.rarity}
-                          </Badge>
-                          {item.category && <span className="text-gray-400">{item.category}</span>}
-                        </div>
+                      </div>
+                      {item.description && <div className="text-gray-300 mt-1">{item.description}</div>}
+                      {item.quantity === 0 && <div className="text-red-400 mt-1 font-bold">OUT OF STOCK</div>}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs bg-gradient-to-r ${getRarityColor(item.rarity)}`}
+                        >
+                          {item.rarity}
+                        </Badge>
+                        {item.category && <span className="text-gray-400">{item.category}</span>}
                       </div>
                     </div>
-                    <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-6 h-6 p-0 bg-stone-700 border-stone-600 hover:bg-stone-600"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setEditingItem(item)
-                            }}
-                          >
-                            <Edit className="w-3 h-3 text-white" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent
-                          className="bg-card/95 backdrop-blur-sm border-2 border-border"
-                          aria-describedby="edit-item-description"
-                        >
-                          <DialogHeader>
-                            <DialogTitle>Edit Item</DialogTitle>
-                            <div id="edit-item-description" className="sr-only">
-                              Edit the properties of the selected inventory item including name, description, quantity,
-                              rarity, category, and nation assignment.
-                            </div>
-                          </DialogHeader>
-                          <EditItemForm item={editingItem} onSave={handleEditItem} nations={nations} />
-                        </DialogContent>
-                      </Dialog>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="w-6 h-6 p-0 bg-red-700 border-red-600 hover:bg-red-600 text-white"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onDeleteItem(item.id)
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="minecraft-item-icon opacity-30">
-                    <div className="w-full h-full bg-gradient-to-br from-stone-400 to-stone-600"></div>
                   </div>
-                )}
-              </div>
-            )
-          })}
+                  <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-6 h-6 p-0 bg-stone-700 border-stone-600 hover:bg-stone-600"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setEditingItem(item)
+                          }}
+                        >
+                          <Edit className="w-3 h-3 text-white" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent
+                        className="bg-card/95 backdrop-blur-sm border-2 border-border"
+                        aria-describedby="edit-item-description"
+                      >
+                        <DialogHeader>
+                          <DialogTitle>Edit Item</DialogTitle>
+                          <div id="edit-item-description" className="sr-only">
+                            Edit the properties of the selected inventory item including name, description, quantity,
+                            rarity, category, and image.
+                          </div>
+                        </DialogHeader>
+                        <EditItemForm item={editingItem} onSave={handleEditItem} />
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-6 h-6 p-0 bg-red-700 border-red-600 hover:bg-red-600 text-white"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onDeleteItem(item.id)
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="minecraft-item-icon opacity-30">
+                  <div className="w-full h-full bg-gradient-to-br from-stone-400 to-stone-600"></div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         {totalPages > 1 && (
@@ -314,11 +299,7 @@ export function InventoryGrid({ items, onUpdateItem, onDeleteItem, nations = [] 
   )
 }
 
-function EditItemForm({
-  item,
-  onSave,
-  nations = [],
-}: { item: Item | null; onSave: (updates: Partial<Item>) => void; nations?: Nation[] }) {
+function EditItemForm({ item, onSave }: { item: Item | null; onSave: (updates: Partial<Item>) => void }) {
   const [formData, setFormData] = useState({
     name: item?.name || "",
     description: item?.description || "",
@@ -326,11 +307,11 @@ function EditItemForm({
     rarity: item?.rarity || ("common" as const),
     category: item?.category || "",
     imageUrl: item?.imageUrl || "",
-    nationId: item?.nationId || nations.find((n) => n.name === "Unassigned")?.id || null,
+    nationImageUrl: item?.nationImageUrl || "",
   })
 
   const [imagePreview, setImagePreview] = useState<string>(item?.imageUrl || "")
-  const selectedNation = nations.find((n) => n.id === formData.nationId)
+  const [nationImagePreview, setNationImagePreview] = useState<string>(item?.nationImageUrl || "")
 
   if (!item) return null
 
@@ -353,9 +334,33 @@ function EditItemForm({
     }
   }
 
+  const handleNationImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        try {
+          const result = event.target?.result as string
+          if (result && typeof result === "string") {
+            setNationImagePreview(result)
+            setFormData((prev) => ({ ...prev, nationImageUrl: result }))
+          }
+        } catch (error) {
+          console.error("[v0] Error processing uploaded nation image:", error)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleRemoveImage = () => {
     setImagePreview("")
     setFormData((prev) => ({ ...prev, imageUrl: "" }))
+  }
+
+  const handleRemoveNationImage = () => {
+    setNationImagePreview("")
+    setFormData((prev) => ({ ...prev, nationImageUrl: "" }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -400,56 +405,6 @@ function EditItemForm({
       />
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Assign to Nation</label>
-        <Select
-          value={formData.nationId?.toString() || ""}
-          onValueChange={(value) =>
-            setFormData((prev) => ({ ...prev, nationId: value ? Number.parseInt(value) : null }))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a nation">
-              {selectedNation && (
-                <div className="flex items-center gap-2">
-                  {selectedNation.flag_url ? (
-                    <img
-                      src={selectedNation.flag_url || "/placeholder.svg"}
-                      alt={`${selectedNation.name} flag`}
-                      className="w-4 h-3 object-cover border rounded"
-                    />
-                  ) : (
-                    <Flag className="w-4 h-4 text-muted-foreground" />
-                  )}
-                  <span>{selectedNation.name}</span>
-                </div>
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {nations.map((nation) => (
-              <SelectItem key={nation.id} value={nation.id.toString()}>
-                <div className="flex items-center gap-2">
-                  {nation.flag_url ? (
-                    <img
-                      src={nation.flag_url || "/placeholder.svg"}
-                      alt={`${nation.name} flag`}
-                      className="w-4 h-3 object-cover border rounded"
-                    />
-                  ) : (
-                    <Flag className="w-4 h-4 text-muted-foreground" />
-                  )}
-                  <span>{nation.name}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedNation && selectedNation.description && (
-          <p className="text-xs text-muted-foreground">{selectedNation.description}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
         <label className="text-sm font-medium">Item Image</label>
         {imagePreview && (
           <div className="relative w-20 h-20 border-2 border-border rounded">
@@ -473,6 +428,36 @@ function EditItemForm({
           <Input type="file" accept="image/*" onChange={handleImageUpload} className="flex-1" />
           {imagePreview && (
             <Button type="button" variant="outline" size="sm" onClick={handleRemoveImage}>
+              Remove
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Nation Image (appears in hover tooltip)</label>
+        {nationImagePreview && (
+          <div className="relative w-16 h-16 border-2 border-border rounded">
+            <img
+              src={nationImagePreview || "/placeholder.svg"}
+              alt="Nation Preview"
+              className="w-full h-full object-cover rounded"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="absolute -top-2 -right-2 w-6 h-6 p-0"
+              onClick={handleRemoveNationImage}
+            >
+              ×
+            </Button>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Input type="file" accept="image/*" onChange={handleNationImageUpload} className="flex-1" />
+          {nationImagePreview && (
+            <Button type="button" variant="outline" size="sm" onClick={handleRemoveNationImage}>
               Remove
             </Button>
           )}

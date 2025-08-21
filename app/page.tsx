@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Bell, Package, Settings, Upload, Users, Webhook, Lock, Crown } from "lucide-react"
+import { Bell, Package, Settings, Upload, Users, Webhook, Lock } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
 import { InventoryGrid } from "@/components/inventory-grid"
 import { TradeNotifications } from "@/components/trade-notifications"
@@ -12,8 +12,6 @@ import { PublicTradingInterface } from "@/components/public-trading-interface"
 import { TradeManagement } from "@/components/trade-management"
 import { AdminDashboard } from "@/components/admin-dashboard"
 import { WebhookSettings } from "@/components/webhook-settings"
-import { GoodsOfNations } from "@/components/goods-of-nations"
-import { NationsManagement } from "@/components/nations-management"
 import { WebhookService } from "@/lib/webhook-service"
 import {
   fetchItems,
@@ -28,12 +26,8 @@ import {
   saveWebhookConfigAPI,
   fetchAdminPassword,
   saveAdminPasswordAPI,
-  fetchNations,
-  createNationAPI,
-  updateNationAPI,
-  deleteNationAPI,
 } from "@/lib/api-client"
-import type { Item, WebhookConfig, Nation } from "@/lib/database"
+import type { Item, WebhookConfig } from "@/lib/database"
 
 export interface TradeOffer {
   id: number
@@ -56,7 +50,6 @@ export default function MinecraftDashboard() {
   const [adminPassword, setAdminPassword] = useState("Flugel")
 
   const [inventory, setInventory] = useState<Item[]>([])
-  const [nations, setNations] = useState<Nation[]>([])
   const [isLoadingItems, setIsLoadingItems] = useState(true)
   const [isLoadingRequests, setIsLoadingRequests] = useState(true)
 
@@ -98,10 +91,9 @@ export default function MinecraftDashboard() {
         setIsLoadingItems(true)
         setIsLoadingRequests(true)
 
-        const [items, requests, nationsData] = await Promise.all([fetchItems(), fetchTrades(), fetchNations()])
+        const [items, requests] = await Promise.all([fetchItems(), fetchTrades()])
 
         setInventory(items)
-        setNations(nationsData)
 
         const transformedRequests = requests.map((req) => ({
           id: req.id,
@@ -135,8 +127,8 @@ export default function MinecraftDashboard() {
   }, [sessionId])
 
   useEffect(() => {
-    setWebhookService(new WebhookService(webhookConfig, nations))
-  }, [webhookConfig, nations])
+    setWebhookService(new WebhookService(webhookConfig))
+  }, [webhookConfig])
 
   const addItem = async (item: Omit<Item, "id" | "created_at" | "updated_at">) => {
     try {
@@ -172,33 +164,6 @@ export default function MinecraftDashboard() {
       console.log(`[v0] Session ${sessionId}: Item deleted successfully`)
     } catch (error) {
       console.error(`[v0] Session ${sessionId}: Failed to delete item:`, error)
-    }
-  }
-
-  const createNation = async (nation: Omit<Nation, "id" | "created_at" | "updated_at">) => {
-    try {
-      const newNation = await createNationAPI(nation)
-      setNations((prev) => [...prev, newNation])
-    } catch (error) {
-      console.error("Failed to create nation:", error)
-    }
-  }
-
-  const updateNation = async (id: number, updates: Partial<Omit<Nation, "id" | "created_at" | "updated_at">>) => {
-    try {
-      const updatedNation = await updateNationAPI(id, updates)
-      setNations((prev) => prev.map((nation) => (nation.id === id ? updatedNation : nation)))
-    } catch (error) {
-      console.error("Failed to update nation:", error)
-    }
-  }
-
-  const deleteNation = async (id: number) => {
-    try {
-      await deleteNationAPI(id)
-      setNations((prev) => prev.filter((nation) => nation.id !== id))
-    } catch (error) {
-      console.error("Failed to delete nation:", error)
     }
   }
 
@@ -484,43 +449,13 @@ export default function MinecraftDashboard() {
             </div>
           </header>
 
-          <Tabs defaultValue="public" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 bg-card/80 backdrop-blur-sm border-2 border-border">
-              <TabsTrigger value="public" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Trading Post
-              </TabsTrigger>
-              <TabsTrigger value="nations" className="flex items-center gap-2">
-                <Crown className="w-4 h-4" />
-                Goods of Nations
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="public">
-              {isLoadingItems ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-muted-foreground">Loading items...</div>
-                </div>
-              ) : (
-                <PublicTradingInterface items={inventory} nations={nations} onTradeRequest={addTradeRequest} />
-              )}
-            </TabsContent>
-
-            <TabsContent value="nations">
-              {isLoadingItems ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-muted-foreground">Loading nations...</div>
-                </div>
-              ) : (
-                <GoodsOfNations
-                  items={inventory}
-                  nations={nations}
-                  onTradeRequest={addTradeRequest}
-                  isPublicView={true}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
+          {isLoadingItems ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-muted-foreground">Loading items...</div>
+            </div>
+          ) : (
+            <PublicTradingInterface items={inventory} onTradeRequest={addTradeRequest} />
+          )}
         </div>
       </div>
     )
@@ -552,7 +487,7 @@ export default function MinecraftDashboard() {
         </header>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-card/80 backdrop-blur-sm border-2 border-border">
+          <TabsList className="grid w-full grid-cols-6 bg-card/80 backdrop-blur-sm border-2 border-border">
             <TabsTrigger value="inventory" className="flex items-center gap-2">
               <Package className="w-4 h-4" />
               Inventory
@@ -560,10 +495,6 @@ export default function MinecraftDashboard() {
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="w-4 h-4" />
               Upload
-            </TabsTrigger>
-            <TabsTrigger value="nations" className="flex items-center gap-2">
-              <Crown className="w-4 h-4" />
-              Nations
             </TabsTrigger>
             <TabsTrigger value="public" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -589,27 +520,12 @@ export default function MinecraftDashboard() {
                 <div className="text-muted-foreground">Loading inventory...</div>
               </div>
             ) : (
-              <InventoryGrid items={inventory} onUpdateItem={updateItem} onDeleteItem={deleteItem} nations={nations} />
+              <InventoryGrid items={inventory} onUpdateItem={updateItem} onDeleteItem={deleteItem} />
             )}
           </TabsContent>
 
           <TabsContent value="upload">
-            <ItemUploadForm onAddItem={addItem} nations={nations} />
-          </TabsContent>
-
-          <TabsContent value="nations">
-            {isLoadingItems ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-muted-foreground">Loading nations...</div>
-              </div>
-            ) : (
-              <NationsManagement
-                nations={nations}
-                onCreateNation={createNation}
-                onUpdateNation={updateNation}
-                onDeleteNation={deleteNation}
-              />
-            )}
+            <ItemUploadForm onAddItem={addItem} />
           </TabsContent>
 
           <TabsContent value="public">
@@ -618,7 +534,7 @@ export default function MinecraftDashboard() {
                 <div className="text-muted-foreground">Loading items...</div>
               </div>
             ) : (
-              <PublicTradingInterface items={inventory} nations={nations} onTradeRequest={addTradeRequest} />
+              <PublicTradingInterface items={inventory} onTradeRequest={addTradeRequest} />
             )}
           </TabsContent>
 
@@ -641,10 +557,14 @@ export default function MinecraftDashboard() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <GoodsOfNations
-              items={inventory}
-              nations={nations}
-              onTradeRequest={addTradeRequest}
+            <AdminDashboard
+              inventory={inventory}
+              tradeRequests={tradeRequests}
+              webhookConfig={webhookConfig}
+              onUpdateItem={updateItem}
+              onDeleteItem={deleteItem}
+              onUpdatePassword={updateAdminPassword}
+              onClearTradeRequests={clearTradeRequests}
             />
           </TabsContent>
         </Tabs>

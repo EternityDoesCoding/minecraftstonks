@@ -641,18 +641,10 @@ export default function MinecraftDashboard() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <AdminDashboard
-              inventory={inventory}
-              tradeRequests={tradeRequests}
-              webhookConfig={webhookConfig}
-              onUpdateItem={updateItem}
-              onDeleteItem={deleteItem}
-              onUpdatePassword={updateAdminPassword}
-              onClearTradeLog={clearTradeRequests}
+            <GoodsOfNations
+              items={inventory}
               nations={nations}
-              onCreateNation={createNation}
-              onUpdateNation={updateNation}
-              onDeleteNation={deleteNation}
+              onTradeRequest={addTradeRequest}
             />
           </TabsContent>
         </Tabs>

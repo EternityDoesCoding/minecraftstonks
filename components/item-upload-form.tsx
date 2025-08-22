@@ -9,14 +9,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Upload, Plus, X, ImageIcon } from "lucide-react"
+import { Upload, Plus, X, ImageIcon, Flag } from "lucide-react"
 import type { Item } from "@/app/page"
+import type { Nation } from "@/lib/database"
 
 interface ItemUploadFormProps {
   onAddItem: (item: Omit<Item, "id">) => void
+  nations?: Nation[]
 }
 
-export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
+export function ItemUploadForm({ onAddItem, nations = [] }: ItemUploadFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -24,16 +26,16 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
     rarity: "common" as const,
     category: "",
     imageUrl: "",
-    nationImageUrl: "",
+    nationId: nations.find((n) => n.name === "Unassigned")?.id || null,
   })
 
   const [bulkItems, setBulkItems] = useState<Array<Omit<Item, "id">>>([])
   const [imagePreview, setImagePreview] = useState<string>("")
-  const [nationImagePreview, setNationImagePreview] = useState<string>("")
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const nationFileInputRef = useRef<HTMLInputElement>(null)
   const [quantityInput, setQuantityInput] = useState("1")
+
+  const selectedNation = nations.find((n) => n.id === formData.nationId)
 
   const handleFileUpload = (file: File) => {
     if (file && file.type.startsWith("image/")) {
@@ -42,18 +44,6 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
         const result = e.target?.result as string
         setImagePreview(result)
         setFormData((prev) => ({ ...prev, imageUrl: result }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const handleNationFileUpload = (file: File) => {
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        setNationImagePreview(result)
-        setFormData((prev) => ({ ...prev, nationImageUrl: result }))
       }
       reader.readAsDataURL(file)
     }
@@ -85,26 +75,11 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
     }
   }
 
-  const handleNationFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      handleNationFileUpload(files[0])
-    }
-  }
-
   const clearImage = () => {
     setImagePreview("")
     setFormData((prev) => ({ ...prev, imageUrl: "" }))
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
-    }
-  }
-
-  const clearNationImage = () => {
-    setNationImagePreview("")
-    setFormData((prev) => ({ ...prev, nationImageUrl: "" }))
-    if (nationFileInputRef.current) {
-      nationFileInputRef.current.value = ""
     }
   }
 
@@ -119,16 +94,12 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
         rarity: "common",
         category: "",
         imageUrl: "",
-        nationImageUrl: "",
+        nationId: nations.find((n) => n.name === "Unassigned")?.id || null,
       })
       setQuantityInput("1")
       setImagePreview("")
-      setNationImagePreview("")
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
-      }
-      if (nationFileInputRef.current) {
-        nationFileInputRef.current.value = ""
       }
     }
   }
@@ -148,16 +119,12 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
         rarity: "common",
         category: "",
         imageUrl: "",
-        nationImageUrl: "",
+        nationId: nations.find((n) => n.name === "Unassigned")?.id || null,
       })
       setQuantityInput("1")
       setImagePreview("")
-      setNationImagePreview("")
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
-      }
-      if (nationFileInputRef.current) {
-        nationFileInputRef.current.value = ""
       }
     }
   }
@@ -252,62 +219,53 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nation Image (appears in tooltip)</label>
-              <div className="relative border-2 border-dashed rounded-lg p-4 border-muted-foreground/25 hover:border-muted-foreground/50 transition-colors">
-                {nationImagePreview ? (
-                  <div className="relative">
-                    <div className="w-16 h-16 mx-auto mb-2 rounded border overflow-hidden">
-                      <img
-                        src={nationImagePreview || "/placeholder.svg"}
-                        alt="Nation Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => nationFileInputRef.current?.click()}
-                      >
-                        <ImageIcon className="w-4 h-4 mr-2" />
-                        Change
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={clearNationImage}
-                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground bg-transparent"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <ImageIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground mb-2">Optional nation/flag image for tooltip</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => nationFileInputRef.current?.click()}
-                    >
-                      <Upload className="w-3 h-3 mr-2" />
-                      Choose Nation Image
-                    </Button>
-                  </div>
-                )}
-                <input
-                  ref={nationFileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleNationFileInputChange}
-                  className="hidden"
-                />
-              </div>
+              <label className="text-sm font-medium">Assign to Nation</label>
+              <Select
+                value={formData.nationId?.toString() || ""}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, nationId: value ? Number.parseInt(value) : null }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a nation">
+                    {selectedNation && (
+                      <div className="flex items-center gap-2">
+                        {selectedNation.flag_url ? (
+                          <img
+                            src={selectedNation.flag_url || "/placeholder.svg"}
+                            alt={`${selectedNation.name} flag`}
+                            className="w-4 h-3 object-cover border rounded"
+                          />
+                        ) : (
+                          <Flag className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span>{selectedNation.name}</span>
+                      </div>
+                    )}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {nations.map((nation) => (
+                    <SelectItem key={nation.id} value={nation.id.toString()}>
+                      <div className="flex items-center gap-2">
+                        {nation.flag_url ? (
+                          <img
+                            src={nation.flag_url || "/placeholder.svg"}
+                            alt={`${nation.name} flag`}
+                            className="w-4 h-3 object-cover border rounded"
+                          />
+                        ) : (
+                          <Flag className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span>{nation.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedNation && selectedNation.description && (
+                <p className="text-xs text-muted-foreground">{selectedNation.description}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -418,50 +376,71 @@ export function ItemUploadForm({ onAddItem }: ItemUploadFormProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
-              {bulkItems.map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`minecraft-item-icon w-12 h-12 bg-gradient-to-br ${getRarityColor(item.rarity)}`}>
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl || "/placeholder.svg"} alt={item.name} />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
-                          <span className="text-xs font-bold text-stone-700">{item.name.charAt(0).toUpperCase()}</span>
-                        </div>
-                      )}
-                      {item.quantity > 1 && (
-                        <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm">
-                          {item.quantity}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className={`text-xs bg-gradient-to-r ${getRarityColor(item.rarity)}`}
-                        >
-                          {item.rarity}
-                        </Badge>
-                        {item.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {item.category}
-                          </Badge>
+              {bulkItems.map((item, index) => {
+                const itemNation = nations.find((n) => n.id === item.nationId)
+                return (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`minecraft-item-icon w-12 h-12 bg-gradient-to-br ${getRarityColor(item.rarity)}`}>
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl || "/placeholder.svg"} alt={item.name} />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-stone-300 to-stone-500 flex items-center justify-center">
+                            <span className="text-xs font-bold text-stone-700">
+                              {item.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        {item.quantity > 1 && (
+                          <div className="absolute -bottom-1 -right-1 bg-stone-800 text-white text-xs font-bold px-1 rounded-sm">
+                            {item.quantity}
+                          </div>
                         )}
                       </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium">{item.name}</p>
+                          {itemNation && (
+                            <div className="flex items-center gap-1">
+                              {itemNation.flag_url ? (
+                                <img
+                                  src={itemNation.flag_url || "/placeholder.svg"}
+                                  alt={`${itemNation.name} flag`}
+                                  className="w-4 h-3 object-cover border rounded"
+                                />
+                              ) : (
+                                <Flag className="w-3 h-3 text-muted-foreground" />
+                              )}
+                              <span className="text-xs text-muted-foreground">{itemNation.name}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className={`text-xs bg-gradient-to-r ${getRarityColor(item.rarity)}`}
+                          >
+                            {item.rarity}
+                          </Badge>
+                          {item.category && (
+                            <Badge variant="outline" className="text-xs">
+                              {item.category}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => removeFromBulk(index)}
+                      className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => removeFromBulk(index)}
-                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+                )
+              })}
             </div>
             <div className="flex gap-2">
               <Button onClick={handleBulkAdd} className="minecraft-button flex-1">

@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: "Minecraft Inventory Dashboard",
-  description: "Trade and manage your Minecraft inventory with Discord notifications",
+  description: "Trade and manage your Minecraft inventory with Discord notifications, IGNORE.",
   generator: "v0.app",
 }
 
